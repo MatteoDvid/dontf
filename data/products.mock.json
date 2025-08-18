@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Sac de randonnée",
+    "asin": "B09X12345",
+    "status": "active",
+    "mustHave": true,
+    "priority": 1,
+    "audience": "adult",
+    "countryCodes": ["FR", "ES", "IT"],
+    "ageMin": 8,
+    "ageMax": 65,
+    "tags": ["GEAR_BACKPACK_DAYPACK"]
+  },
+  {
+    "label": "Adaptateur universel",
+    "asin": "B08A98765",
+    "status": "active",
+    "mustHave": false,
+    "priority": 0,
+    "audience": "all",
+    "countryCodes": ["US", "GB", "FR"],
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": ["GEAR_UNIVERSAL_ADAPTER"]
+  }
+]
