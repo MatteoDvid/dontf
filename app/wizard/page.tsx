@@ -22,7 +22,6 @@ type AiResult =
 
 export default function WizardPage() {
   const [destinationCountry, setDestinationCountry] = useState('FR');
-  const [marketplaceCountry, setMarketplaceCountry] = useState('FR');
   const [travelers, setTravelers] = useState(1);
   const [agesText, setAgesText] = useState('30');
   const [result, setResult] = useState<ApiResult>({ status: 'idle' });
@@ -44,7 +43,7 @@ export default function WizardPage() {
     try {
       const payload = {
         destinationCountry: destinationCountry.toUpperCase(),
-        marketplaceCountry: marketplaceCountry.toUpperCase(),
+        marketplaceCountry: 'FR',
         dates: { start: new Date().toISOString(), end: new Date().toISOString() },
         travelers,
         ages,
@@ -60,23 +59,13 @@ export default function WizardPage() {
       if (res.status === 400) {
         const data = await res.json();
         setResult({ status: 'validation-error', issues: data.issues });
-        console.log('[Wizard] Validation error', {
-          destinationCountry,
-          marketplaceCountry,
-          ages,
-          travelers,
-        });
+        console.log('[Wizard] Validation error', { destinationCountry, ages, travelers });
         return;
       }
 
       if (!res.ok) {
         setResult({ status: 'network-error' });
-        console.log('[Wizard] Network error', {
-          destinationCountry,
-          marketplaceCountry,
-          ages,
-          travelers,
-        });
+        console.log('[Wizard] Network error', { destinationCountry, ages, travelers });
         return;
       }
 
@@ -90,34 +79,27 @@ export default function WizardPage() {
 
       console.log('[Wizard] Query summary', {
         destinationCountry,
-        marketplaceCountry,
         travelers,
         ages,
         resultCount: items.length,
       });
     } catch {
       setResult({ status: 'network-error' });
-      console.log('[Wizard] Network error (exception)', {
-        destinationCountry,
-        marketplaceCountry,
-        ages,
-        travelers,
-      });
+      console.log('[Wizard] Network error (exception)', { destinationCountry, ages, travelers });
     }
-  }, [destinationCountry, marketplaceCountry, travelers, ages, ai]);
+  }, [destinationCountry, travelers, ages, ai]);
 
   // Persist wizardState in localStorage
   useEffect(() => {
     try {
       const state = {
         destinationCountry,
-        marketplaceCountry,
         travelers,
         agesText,
       };
       localStorage.setItem('wizardStateV1', JSON.stringify(state));
     } catch {}
-  }, [destinationCountry, marketplaceCountry, travelers, agesText]);
+  }, [destinationCountry, travelers, agesText]);
 
   // Load wizardState from localStorage on first mount
   useEffect(() => {
@@ -126,12 +108,10 @@ export default function WizardPage() {
       if (raw) {
         const state = JSON.parse(raw) as Partial<{
           destinationCountry: string;
-          marketplaceCountry: string;
           travelers: number;
           agesText: string;
         }>;
         if (state.destinationCountry) setDestinationCountry(state.destinationCountry);
-        if (state.marketplaceCountry) setMarketplaceCountry(state.marketplaceCountry);
         if (typeof state.travelers === 'number') setTravelers(state.travelers);
         if (state.agesText) setAgesText(state.agesText);
       }
@@ -145,7 +125,7 @@ export default function WizardPage() {
     const groupMax = Math.max(...ages);
     const payload = {
       destinationCountry: destinationCountry.toUpperCase(),
-      marketplaceCountry: marketplaceCountry.toUpperCase(),
+      marketplaceCountry: 'FR',
       groupAge: { min: groupMin, max: groupMax },
       season: 'any',
       tripType: 'general',
@@ -177,7 +157,7 @@ export default function WizardPage() {
     } catch {
       setAi({ status: 'network-error' });
     }
-  }, [ages, destinationCountry, marketplaceCountry]);
+  }, [ages, destinationCountry]);
 
   const [step, setStep] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -200,23 +180,20 @@ export default function WizardPage() {
           {step === 0 && (
             <div className="grid gap-4 sm:grid-cols-3">
               <div>
-                <label className="block text-sm font-medium">Destination (ISO2)</label>
-                <input
-                  className="mt-1 w-full rounded border px-3 py-2"
+                <label className="block text-sm font-medium">Pays</label>
+                <select
+                  className="mt-1 w-full rounded border px-3 py-2 bg-white"
                   value={destinationCountry}
                   onChange={(e) => setDestinationCountry(e.target.value)}
-                  maxLength={2}
-                />
+                >
+                  <option value="IS">Islande</option>
+                  <option value="TH">Thaïlande</option>
+                  <option value="MA">Maroc</option>
+                  <option value="BR">Brésil</option>
+                  <option value="US">États-Unis</option>
+                </select>
               </div>
-              <div>
-                <label className="block text-sm font-medium">Marketplace (ISO2)</label>
-                <input
-                  className="mt-1 w-full rounded border px-3 py-2"
-                  value={marketplaceCountry}
-                  onChange={(e) => setMarketplaceCountry(e.target.value)}
-                  maxLength={2}
-                />
-              </div>
+              {/* Marketplace fixé à FR par défaut (non modifiable) */}
             </div>
           )}
 

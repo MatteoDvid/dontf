@@ -5,6 +5,20 @@ export const Iso2CountrySchema = z
   .length(2)
   .regex(/^[A-Z]{2}$/);
 
+// Définir TagIdSchema avant tout usage (WizardStateSchema l'utilise)
+export const TagIdSchema = z.enum([
+  'GEAR_BACKPACK_DAYPACK',
+  'GEAR_UNIVERSAL_ADAPTER',
+  'GEAR_POWER_BANK',
+  'GEAR_TRAVEL_BOTTLES',
+  'GEAR_RAIN_PONCHO',
+  'CLOTHING_THERMAL_LAYER',
+  'ESSENTIALS_DOCUMENT_POUCH',
+  'RISK_FIRST_AID_KIT',
+  'RISK_ANTI_THEFT_LOCK',
+  'RISK_MOSQUITO_REPELLENT',
+]);
+
 export const WizardStateSchema = z
   .object({
     destinationCountry: Iso2CountrySchema,
@@ -73,18 +87,6 @@ export const ProductResponseSchema = z.object({
 export type ProductResponse = z.infer<typeof ProductResponseSchema>;
 
 // OpenAI explain/tagging contracts
-export const TagIdSchema = z.enum([
-  'GEAR_BACKPACK_DAYPACK',
-  'GEAR_UNIVERSAL_ADAPTER',
-  'GEAR_POWER_BANK',
-  'GEAR_TRAVEL_BOTTLES',
-  'GEAR_RAIN_PONCHO',
-  'CLOTHING_THERMAL_LAYER',
-  'ESSENTIALS_DOCUMENT_POUCH',
-  'RISK_FIRST_AID_KIT',
-  'RISK_ANTI_THEFT_LOCK',
-  'RISK_MOSQUITO_REPELLENT',
-]);
 
 export const ExplainRequestSchema = z.object({
   destinationCountry: Iso2CountrySchema,

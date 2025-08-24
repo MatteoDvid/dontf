@@ -53,22 +53,39 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
 
   // 3) Read from Google Sheets
   const cfg = getConfig();
-  if (!cfg) {
+  const scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+  const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS
+    ? path.isAbsolute(process.env.GOOGLE_APPLICATION_CREDENTIALS)
+      ? process.env.GOOGLE_APPLICATION_CREDENTIALS
+      : path.join(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS)
+    : undefined;
+
+  if (!cfg && !keyFile) {
     const raw = await fs.readFile(path.join(process.cwd(), 'data', 'products.mock.json'), 'utf-8');
     const json = JSON.parse(raw);
     return ProductRecordSchema.array().parse(json);
   }
 
-  const auth = new google.auth.JWT({
-    email: cfg.serviceEmail,
-    key: cfg.serviceKey.replace(/\\n/g, '\n'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
-  });
+  let auth: any;
+  if (keyFile) {
+    const googleAuth = new google.auth.GoogleAuth({ keyFile, scopes });
+    auth = await googleAuth.getClient();
+  } else if (cfg) {
+    auth = new google.auth.JWT({
+      email: cfg.serviceEmail,
+      key: cfg.serviceKey.replace(/\\n/g, '\n'),
+      scopes,
+    });
+  }
 
   const sheets = google.sheets({ version: 'v4', auth });
   const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: cfg.spreadsheetId,
-    range: cfg.range,
+    spreadsheetId:
+      (cfg?.spreadsheetId as string) || (process.env.GOOGLE_SHEETS_SPREADSHEET_ID as string),
+    range:
+      (cfg?.range as string) ||
+      (process.env.GOOGLE_SHEETS_PRODUCTS_RANGE as string) ||
+      'Products!A:Z',
   });
   const values = res.data.values || [];
   if (values.length === 0) return [];
