@@ -91,7 +91,54 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
   if (values.length === 0) return [];
 
   const [header, ...rows] = values as string[][];
-  const idx = (name: string) => header.indexOf(name);
+  function normalizeHeaderKey(input: string): string {
+    return String(input || '')
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/\s+/g, ' ');
+  }
+
+  function normalizeHeaderKeyTight(input: string): string {
+    return normalizeHeaderKey(input).replace(/\s+/g, '');
+  }
+
+  const HEADER_SYNONYMS: Record<string, string[]> = {
+    label: ['label', 'nom', 'name', 'libelle'],
+    asin: ['asin', 'sku'],
+    status: ['status', 'statut'],
+    mustHave: ['musthave', 'must have', 'must_have'],
+    priority: ['priority', 'priorite', 'priorite\u0301', 'priorite\u0300'],
+    audience: ['audience', 'public', 'cible', 'genre', 'mixte'],
+    ageMin: ['agemin', 'age min', 'age_min', 'age-min'],
+    ageMax: ['agemax', 'age max', 'age_max', 'age-max'],
+    tags: ['tags', 'mots cles', 'mots-cles', 'mots_cles', 'keywords'],
+    countryCodes: ['countrycodes', 'pays', 'pays cibles', 'countries', 'country'],
+  };
+
+  function buildHeaderIndex(h: string[]): Record<string, number> {
+    const indexByCanonical: Record<string, number> = {};
+    const normalizedToIndex: Record<string, number> = {};
+    h.forEach((cell, i) => {
+      normalizedToIndex[normalizeHeaderKeyTight(cell)] = i;
+    });
+    for (const canonical of Object.keys(HEADER_SYNONYMS)) {
+      const candidates = HEADER_SYNONYMS[canonical];
+      for (const c of candidates) {
+        const idx = normalizedToIndex[normalizeHeaderKeyTight(c)];
+        if (typeof idx === 'number') {
+          indexByCanonical[canonical] = idx;
+          break;
+        }
+      }
+    }
+    return indexByCanonical;
+  }
+
+  const headerIndex = buildHeaderIndex(header);
+  const idx = (name: string) =>
+    typeof headerIndex[name] === 'number' ? (headerIndex as any)[name] : header.indexOf(name);
   const synonymToTag: Record<string, TagId> = {
     // gear
     backpack: 'GEAR_BACKPACK_DAYPACK',
@@ -129,26 +176,67 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
     }
     return out.slice(0, 6);
   }
-  const mapRow = (r: string[]): ProductRecord => {
+  function normalizeBoolean(input: string | undefined): boolean {
+    const v = String(input || '').trim().toLowerCase();
+    if (['true', 'vrai', 'oui', '1', 'yes', 'y'].includes(v)) return true;
+    if (['false', 'faux', 'non', '0', 'no', 'n'].includes(v)) return false;
+    return false;
+  }
+
+  function normalizeStatus(input: string | undefined): 'active' | 'inactive' {
+    const v = String(input || '').trim().toLowerCase();
+    if (['active', 'actif', 'ok', 'on', 'true', 'vrai', 'oui', '1'].includes(v)) return 'active';
+    if (['inactive', 'inactif', 'off', 'false', 'faux', 'non', '0'].includes(v)) return 'inactive';
+    if (['candidate', 'candidat'].includes(v)) return 'active';
+    return 'active';
+  }
+
+  function normalizeAudience(input: string | undefined): 'child' | 'adult' | 'all' {
+    const v = String(input || '').trim().toLowerCase();
+    if (['child', 'enfant', 'kid', 'kids'].includes(v)) return 'child';
+    if (['adult', 'adulte', 'homme', 'femme', 'men', 'women'].includes(v)) return 'adult';
+    if (['all', 'mixte', 'tous', 'unspecified', ''].includes(v)) return 'all';
+    return 'all';
+  }
+
+  function toInt(input: string | undefined, fallback: number): number {
+    const n = Number(String(input || '').trim());
+    return Number.isFinite(n) ? Math.trunc(n) : fallback;
+  }
+
+  const mapRow = (r: string[], rowIndex: number): ProductRecord | null => {
     const freeformTags = (r[idx('tags')] || '')
       .split(',')
       .map((s) => s.trim())
       .filter(Boolean);
     const tags = mapToTagIds(freeformTags);
-    return ProductRecordSchema.parse({
-      label: r[idx('label')] || '',
-      asin: r[idx('asin')] || '',
-      status: (r[idx('status')] || 'active') as any,
-      mustHave: (r[idx('mustHave')] || 'false').toLowerCase() === 'true',
-      priority: Number.isFinite(Number(r[idx('priority')])) ? Number(r[idx('priority')]) : 0,
-      audience: ((r[idx('audience')] || 'all') as any) || 'all',
-      ageMin: Number(r[idx('ageMin')] || '0'),
-      ageMax: Number(r[idx('ageMax')] || '120'),
+
+    const candidate = {
+      label: (r[idx('label')] || r[idx('Nom' as any)] || '').toString().trim(),
+      asin: (r[idx('asin')] || '').toString().trim(),
+      status: normalizeStatus(r[idx('status')]),
+      mustHave: normalizeBoolean(r[idx('mustHave')]),
+      priority: toInt(r[idx('priority')], 0),
+      audience: normalizeAudience(r[idx('audience')]),
+      ageMin: toInt(r[idx('ageMin')] ?? r[idx('age min' as any)], 0),
+      ageMax: toInt(r[idx('ageMax')] ?? r[idx('age max' as any)], 120),
       tags: tags as any,
-    });
+    };
+
+    const parsed = ProductRecordSchema.safeParse(candidate);
+    if (!parsed.success) {
+      console.warn('[sheets] Ligne ignorée (invalide)', {
+        row: rowIndex + 2,
+        issues: parsed.error.issues,
+      });
+      return null;
+    }
+    return parsed.data;
   };
 
-  const products = rows.map(mapRow);
+  const products = rows
+    .map((r, i) => mapRow(r, i))
+    .filter((p): p is ProductRecord => p !== null);
   // write cache
   try {
     await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true });

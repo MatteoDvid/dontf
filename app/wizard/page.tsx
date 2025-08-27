@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { PROMPT_VERSION } from '@/lib/tags';
-import { WizardStep } from '@/components/WizardStep';
 
 type ProductItem = { label: string; asin: string; marketplace: string; explain: string[] };
 type ApiResult =
@@ -22,6 +21,8 @@ type AiResult =
 
 export default function WizardPage() {
   const [destinationCountry, setDestinationCountry] = useState('FR');
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
   const [travelers, setTravelers] = useState(1);
   const [agesText, setAgesText] = useState('30');
   const [result, setResult] = useState<ApiResult>({ status: 'idle' });
@@ -41,10 +42,12 @@ export default function WizardPage() {
   const onSubmit = useCallback(async () => {
     setResult({ status: 'loading' });
     try {
+      const start = dateStart ? new Date(dateStart).toISOString() : new Date().toISOString();
+      const end = dateEnd ? new Date(dateEnd).toISOString() : new Date().toISOString();
       const payload = {
         destinationCountry: destinationCountry.toUpperCase(),
         marketplaceCountry: 'FR',
-        dates: { start: new Date().toISOString(), end: new Date().toISOString() },
+        dates: { start, end },
         travelers,
         ages,
         tags: ai.status === 'success' ? ai.tags.map((t) => t.id) : undefined,
@@ -59,35 +62,21 @@ export default function WizardPage() {
       if (res.status === 400) {
         const data = await res.json();
         setResult({ status: 'validation-error', issues: data.issues });
-        console.log('[Wizard] Validation error', { destinationCountry, ages, travelers });
         return;
       }
 
       if (!res.ok) {
         setResult({ status: 'network-error' });
-        console.log('[Wizard] Network error', { destinationCountry, ages, travelers });
         return;
       }
 
       const items = (await res.json()) as Array<ProductItem>;
-
-      if (items.length === 0) {
-        setResult({ status: 'empty' });
-      } else {
-        setResult({ status: 'success', items });
-      }
-
-      console.log('[Wizard] Query summary', {
-        destinationCountry,
-        travelers,
-        ages,
-        resultCount: items.length,
-      });
+      if (items.length === 0) setResult({ status: 'empty' });
+      else setResult({ status: 'success', items });
     } catch {
       setResult({ status: 'network-error' });
-      console.log('[Wizard] Network error (exception)', { destinationCountry, ages, travelers });
     }
-  }, [destinationCountry, travelers, ages, ai]);
+  }, [destinationCountry, travelers, ages, ai, dateStart, dateEnd]);
 
   // Persist wizardState in localStorage
   useEffect(() => {
@@ -96,10 +85,12 @@ export default function WizardPage() {
         destinationCountry,
         travelers,
         agesText,
+        dateStart,
+        dateEnd,
       };
       localStorage.setItem('wizardStateV1', JSON.stringify(state));
     } catch {}
-  }, [destinationCountry, travelers, agesText]);
+  }, [destinationCountry, travelers, agesText, dateStart, dateEnd]);
 
   // Load wizardState from localStorage on first mount
   useEffect(() => {
@@ -110,10 +101,14 @@ export default function WizardPage() {
           destinationCountry: string;
           travelers: number;
           agesText: string;
+          dateStart: string;
+          dateEnd: string;
         }>;
         if (state.destinationCountry) setDestinationCountry(state.destinationCountry);
         if (typeof state.travelers === 'number') setTravelers(state.travelers);
         if (state.agesText) setAgesText(state.agesText);
+        if (state.dateStart) setDateStart(state.dateStart);
+        if (state.dateEnd) setDateEnd(state.dateEnd);
       }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -159,128 +154,163 @@ export default function WizardPage() {
     }
   }, [ages, destinationCountry]);
 
-  const [step, setStep] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(1);
-
-  const next = () => {
-    setDirection(1);
-    setStep((s) => Math.min(s + 1, 2));
-  };
-  const prev = () => {
-    setDirection(-1);
-    setStep((s) => Math.max(s - 1, 0));
-  };
-
   return (
-    <main className="min-h-screen p-6">
-      <div className="mx-auto max-w-3xl space-y-6">
-        <h1 className="text-3xl font-semibold">Wizard</h1>
+    <main
+      className="relative min-h-screen w-full text-white"
+      style={{
+        backgroundImage: "url('/images/hero.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      <div className="absolute inset-0 bg-black/50" />
 
-        <WizardStep stepKey={step} direction={direction}>
-          {step === 0 && (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium">Pays</label>
-                <select
-                  className="mt-1 w-full rounded border px-3 py-2 bg-white"
-                  value={destinationCountry}
-                  onChange={(e) => setDestinationCountry(e.target.value)}
-                >
-                  <option value="IS">Islande</option>
-                  <option value="TH">Thaïlande</option>
-                  <option value="MA">Maroc</option>
-                  <option value="BR">Brésil</option>
-                  <option value="US">États-Unis</option>
-                </select>
-              </div>
-              {/* Marketplace fixé à FR par défaut (non modifiable) */}
-            </div>
-          )}
-
-          {step === 1 && (
-            <div className="grid gap-4 sm:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium">Voyageurs</label>
-                <input
-                  type="number"
-                  className="mt-1 w-full rounded border px-3 py-2"
-                  value={travelers}
-                  min={1}
-                  max={20}
-                  onChange={(e) => setTravelers(Number(e.target.value))}
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <label className="block text-sm font-medium">Âges (séparés par des virgules)</label>
-                <input
-                  className="mt-1 w-full rounded border px-3 py-2"
-                  value={agesText}
-                  onChange={(e) => setAgesText(e.target.value)}
-                />
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={onUpdateAdvices}
-                  className="rounded-md border px-4 py-2 hover:bg-gray-50"
-                >
-                  Mettre à jour les conseils
-                </button>
-                {ai.status === 'loading' && (
-                  <span className="text-sm text-gray-600">Analyse en cours…</span>
-                )}
-                {ai.status === 'network-error' && (
-                  <span className="text-sm text-red-600">Conseils indisponibles</span>
-                )}
-              </div>
-
-              {ai.status === 'success' && ai.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {ai.tags.map((t) => (
-                    <span
-                      key={t.id}
-                      className="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs"
-                      title={`score ${Math.round(t.score * 100)}%`}
-                    >
-                      {t.id}
-                      <span className="text-gray-500">{Math.round(t.score * 100)}%</span>
-                    </span>
-                  ))}
+      <div className="relative mx-auto max-w-7xl px-6 py-10 md:py-16 lg:py-20">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
+          {/* Carte verre dépoli */}
+          <div className="max-w-md">
+            <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-xl shadow-2xl p-6 md:p-7">
+              <div className="space-y-5">
+                <div>
+                  <div className="text-sm font-semibold">Où partez-vous</div>
+                  <select
+                    className="mt-2 w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none focus:ring-2 focus:ring-white/60"
+                    value={destinationCountry}
+                    onChange={(e) => setDestinationCountry(e.target.value)}
+                  >
+                    <option value="FR">France</option>
+                    <option value="IS">Islande</option>
+                    <option value="TH">Thaïlande</option>
+                    <option value="MA">Maroc</option>
+                    <option value="BR">Brésil</option>
+                    <option value="US">États-Unis</option>
+                  </select>
                 </div>
+
+                <div>
+                  <div className="text-sm font-semibold">Quand partez-vous</div>
+                  <div className="mt-2 grid grid-cols-2 gap-3">
+                    <div className="flex items-center gap-2 rounded-xl bg-white/80 px-3 py-2 text-gray-900">
+                      <span className="text-sm font-medium">Départ</span>
+                      <input
+                        type="date"
+                        value={dateStart}
+                        onChange={(e) => setDateStart(e.target.value)}
+                        className="ml-auto bg-transparent outline-none text-sm"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 rounded-xl bg-white/80 px-3 py-2 text-gray-900">
+                      <span className="text-sm font-medium">Arrivé</span>
+                      <input
+                        type="date"
+                        value={dateEnd}
+                        onChange={(e) => setDateEnd(e.target.value)}
+                        className="ml-auto bg-transparent outline-none text-sm"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-sm font-semibold">Avec qui ?</div>
+                  <div className="mt-2 grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="block text-xs mb-1">Voyageurs</label>
+                      <input
+                        type="number"
+                        className="w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none"
+                        value={travelers}
+                        min={1}
+                        max={20}
+                        onChange={(e) => setTravelers(Number(e.target.value))}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1">Âges (séparés par des virgules)</label>
+                      <input
+                        className="w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none"
+                        value={agesText}
+                        onChange={(e) => setAgesText(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-1">
+                  <button
+                    onClick={onUpdateAdvices}
+                    className="rounded-xl border border-white/30 bg-white/10 px-4 py-2 hover:bg-white/20"
+                  >
+                    Analyser avec l’IA
+                  </button>
+                  {ai.status === 'loading' && (
+                    <span className="text-sm text-white/90">Analyse en cours…</span>
+                  )}
+                  {ai.status === 'network-error' && (
+                    <span className="text-sm text-red-300">Conseils indisponibles</span>
+                  )}
+                </div>
+
+                {ai.status === 'success' && ai.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {ai.tags.map((t) => (
+                      <span
+                        key={t.id}
+                        className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs"
+                        title={`score ${Math.round(t.score * 100)}%`}
+                      >
+                        {t.id}
+                        <span className="text-white/80">{Math.round(t.score * 100)}%</span>
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-1">
+                  <button
+                    onClick={onSubmit}
+                    className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-medium text-gray-900 shadow hover:bg-gray-100 transition"
+                  >
+                    <span>Voir les recommandations</span>
+                    <span className="transition-transform group-hover:translate-x-0.5">➡️</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Résultats */}
+          <div className="max-w-2xl">
+            <h2 className="text-2xl md:text-3xl font-semibold">Vos recommandations</h2>
+            <div className="mt-4 rounded-2xl border border-white/20 bg-white/5 backdrop-blur p-4">
+              {result.status === 'idle' && (
+                <p className="text-white/80">Remplissez le formulaire puis lancez la recherche.</p>
               )}
-
-              <button
-                onClick={onSubmit}
-                className="rounded-md bg-black text-white px-5 py-2 hover:bg-gray-800"
-              >
-                Rechercher
-              </button>
-
-              {result.status === 'loading' && <p className="text-gray-600">Chargement…</p>}
-              {result.status === 'empty' && <p className="text-gray-600">0 résultat</p>}
+              {result.status === 'loading' && (
+                <p className="text-white/80">Chargement…</p>
+              )}
+              {result.status === 'empty' && (
+                <p className="text-white/80">0 résultat</p>
+              )}
               {result.status === 'validation-error' && (
-                <pre className="text-red-600 text-sm overflow-auto">
+                <pre className="text-red-200 text-sm overflow-auto">
                   {JSON.stringify(result.issues, null, 2)}
                 </pre>
               )}
               {result.status === 'network-error' && (
-                <p className="text-red-600">Erreur réseau — réessaie plus tard.</p>
+                <p className="text-red-200">Erreur réseau — réessaie plus tard.</p>
               )}
               {result.status === 'success' && (
-                <ul className="divide-y rounded border">
+                <ul className="divide-y divide-white/10">
                   {result.items.map((p) => (
-                    <li key={p.asin} className="p-4 flex items-center justify-between">
+                    <li key={p.asin} className="py-3 flex items-center justify-between">
                       <div>
                         <p className="font-medium">{p.label}</p>
-                        <p className="text-xs text-gray-500">ASIN: {p.asin}</p>
-                        <p className="text-xs text-gray-500">{p.explain.join(' • ')}</p>
+                        <p className="text-xs text-white/80">ASIN: {p.asin}</p>
+                        <p className="text-xs text-white/80">{p.explain.join(' • ')}</p>
                       </div>
                       <a
-                        className="text-blue-600 hover:underline"
+                        className="rounded-lg bg-white/90 text-gray-900 px-3 py-1.5 hover:bg-white"
                         href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`}
                         target="_blank"
                       >
@@ -291,25 +321,7 @@ export default function WizardPage() {
                 </ul>
               )}
             </div>
-          )}
-        </WizardStep>
-
-        <div className="flex items-center justify-between">
-          <button
-            onClick={prev}
-            disabled={step === 0}
-            className="rounded border px-4 py-2 disabled:opacity-40"
-          >
-            Précédent
-          </button>
-          <div className="text-sm text-gray-500">Étape {step + 1} / 3</div>
-          <button
-            onClick={next}
-            disabled={step === 2}
-            className="rounded border px-4 py-2 disabled:opacity-40"
-          >
-            Suivant
-          </button>
+          </div>
         </div>
       </div>
     </main>

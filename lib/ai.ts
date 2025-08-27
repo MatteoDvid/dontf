@@ -18,7 +18,10 @@ function getTtlMs(): number {
   return Math.max(1, hours) * 60 * 60 * 1000;
 }
 
-export async function getTagsForWizardSummary(input: ExplainRequest): Promise<ExplainResponse> {
+export async function getTagsForWizardSummary(
+  input: ExplainRequest,
+  options?: { allowedTags?: string[] },
+): Promise<ExplainResponse> {
   const parsed = ExplainRequestSchema.parse(input);
   const key = computeCacheKey(parsed);
   const now = Date.now();
@@ -40,10 +43,13 @@ export async function getTagsForWizardSummary(input: ExplainRequest): Promise<Ex
 
   if (aiEnabled && apiKey) {
     try {
+      const allowlist = Array.isArray(options?.allowedTags) && options!.allowedTags!.length > 0
+        ? (options!.allowedTags as string[])
+        : ALL_TAGS;
       const system = [
         'Tu es un assistant de tagging de voyage. Réponds en JSON strict uniquement.',
         'Ne propose que des tags parmi la liste blanche suivante (TagID):',
-        ALL_TAGS.join(', '),
+        allowlist.join(', '),
         'Contraintes:',
         `- max ${parsed.constraints.maxTags} tags pertinents (0..${parsed.constraints.maxTags})`,
         '- Chaque tag: { id, score ∈ [0,1] }',
@@ -99,7 +105,7 @@ export async function getTagsForWizardSummary(input: ExplainRequest): Promise<Ex
           parsedJson = content;
         }
         const validated = ExplainResponseSchema.parse(parsedJson);
-        const allow = new Set(ALL_TAGS);
+        const allow = new Set(allowlist);
         const unique: Record<string, number> = {};
         for (const t of validated.tags || []) {
           if (!allow.has(t.id as any)) continue;

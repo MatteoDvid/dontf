@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 import { readProductsFromCacheOrSheet } from '@/lib/sheets';
+import { getTagsForWizardSummary } from '@/lib/ai';
+import { PROMPT_VERSION } from '@/lib/tags';
 import {
   WizardStateSchema,
   ProductRecordSchema,
@@ -28,6 +30,41 @@ export async function POST(request: Request) {
     const groupMinAge = Math.min(...wizard.ages);
     const groupMaxAge = Math.max(...wizard.ages);
 
+    // Déduire la liste blanche dynamique de tags (TagId) depuis le Sheet
+    const allowedTagIds: string[] = Array.from(
+      new Set(
+        validatedProducts.flatMap((p) =>
+          Array.isArray((p as any).tags) ? ((p as any).tags as string[]) : [],
+        ),
+      ),
+    );
+
+    // Auto-génération de tags via IA si aucun tag explicite n'est fourni
+    let aiActive = String(process.env.AI_ENABLED ?? 'false').toLowerCase() === 'true';
+    let effectiveTags: string[] = Array.isArray(wizard.tags) ? (wizard.tags as any) : [];
+    if (aiActive && effectiveTags.length === 0) {
+      try {
+        const maxTags = Number(process.env.AI_MAX_TAGS ?? '6');
+        const explain = await getTagsForWizardSummary({
+          destinationCountry: wizard.destinationCountry,
+          marketplaceCountry: wizard.marketplaceCountry ?? wizard.destinationCountry,
+          groupAge: { min: groupMinAge, max: groupMaxAge },
+          constraints: { maxTags: Math.max(1, Math.min(6, maxTags)), promptVersion: PROMPT_VERSION },
+        } as any, {
+          allowedTags: allowedTagIds.length > 0 ? allowedTagIds : undefined,
+        });
+        effectiveTags = (explain.tags || []).map((t) => t.id) as any;
+      } catch (e) {
+        // En cas d'échec IA, on bascule en mode non-strict (ne filtre pas par tags)
+        aiActive = false;
+        effectiveTags = [];
+      }
+      // Si IA n'a rien retourné, on ne bloque pas la recommandation
+      if (effectiveTags.length === 0) {
+        aiActive = false;
+      }
+    }
+
     const filtered: ProductRecord[] = validatedProducts
       .filter((p) => p.status === 'active')
       .filter((p) => groupMaxAge >= p.ageMin && groupMinAge <= p.ageMax) // intersection non vide
@@ -40,13 +77,12 @@ export async function POST(request: Request) {
         return true;
       })
       .filter((p) => {
-        // Optional tag intersection if tags provided
-        const reqTags = wizard.tags ?? [];
+        // Optional tag intersection if tags provided (après éventuelle génération IA)
+        const reqTags = effectiveTags;
         if (reqTags.length === 0) {
-          const aiEnabled = String(process.env.AI_ENABLED ?? 'false').toLowerCase() === 'true';
-          // Si IA activée mais aucun tag pertinent → ne pas recommander (respect de la pertinence IA)
-          if (aiEnabled) return false;
-          // Si IA désactivée → on garde comportement déterministe générique
+          // Si pas de tags effectifs, et IA active strict → rien
+          if (aiActive) return false;
+          // Sinon on autorise (mode générique)
           return true;
         }
         const productTags: string[] = Array.isArray((p as any).tags)

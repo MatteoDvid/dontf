@@ -1,0 +1,588 @@
+[
+  {
+    "label": "Lunettes de soleil mixtes - Protection UV400, Polarisées",
+    "asin": "B0DPHJS7X4",
+    "status": "active",
+    "mustHave": false,
+    "priority": 2,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Sous vêtements Thermiques hommes",
+    "asin": "B0CG5RFS3Z",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Sous vêtements thermiques femme",
+    "asin": "B0CJ91TWD8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Masque anti vents",
+    "asin": "B0DK8DTY7H",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Pantalons thermiques homme",
+    "asin": "B0D3H82ZMT",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Pantalons thermiques femme",
+    "asin": "B0FL24GVRB",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Polaire homme",
+    "asin": "B0FHLPNQ73",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Polaire femme",
+    "asin": "B0FBTGSTRW",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Crampons pour chaussures - Antidérapantes, Respirantes",
+    "asin": "B0CLD22MTY",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Doudoune homme prix 1",
+    "asin": "B00GBISFQ6",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Doudoune homme prix 2",
+    "asin": "B0DXC8MY81",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Doudoune homme prix 3",
+    "asin": "B08BR9HCFG",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "sac a dos Waterproof bas de gamme - Résistant à l'eau, Léger",
+    "asin": "B0C1JT8RQS",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_BACKPACK_DAYPACK"
+    ]
+  },
+  {
+    "label": "Sac a dos Waterproof moyenne gamme - Résistant à l'eau, Léger",
+    "asin": "B0CVKZ5BDR",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_BACKPACK_DAYPACK"
+    ]
+  },
+  {
+    "label": "Sac a dos Waterproof haute gamme - Résistant à l'eau, Léger",
+    "asin": "B09ZYPY3GB",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_BACKPACK_DAYPACK"
+    ]
+  },
+  {
+    "label": "Bonnet en laine doublé",
+    "asin": "B09M9P8NMJ",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Gants imperméable - Tactiles, Résistants",
+    "asin": "B099K49RB1",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Tour de cou polaire",
+    "asin": "B08J7FJC54",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Chaussettes en laine",
+    "asin": "B0DHKHC1T7",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Chaussures de randonnée craponnables prix 1 - Antidérapantes, Respirantes",
+    "asin": "B07G5YFS1L",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Chaussures de randonnée craponnables prix 2 - Antidérapantes, Respirantes",
+    "asin": "B0CLJFPWB6",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Chaussures de randonnée craponnables prix 3 - Antidérapantes, Respirantes",
+    "asin": "B0DCTLL6FN",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "adaptateur prise européenne",
+    "asin": "B0DCBTKN95",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_UNIVERSAL_ADAPTER"
+    ]
+  },
+  {
+    "label": "lampe frontale - LED, Rechargeable USB",
+    "asin": "B0BLVS6PS8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "THAILANDE t-shirts (coton / technique respirant) homme",
+    "asin": "B079NLHSV8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "t-shirts (coton / technique respirant) femme",
+    "asin": "B07TXZ841G",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "coupe vent légers mixte",
+    "asin": "B07FNJP2GB",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "serviette microfibre",
+    "asin": "B06XJ9MY96",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 1 - Antidérapantes, Respirantes homme",
+    "asin": "B07G5YFS1L",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 2 - Antidérapantes, Respirantes homme",
+    "asin": "B0F13WP6KK",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 3 - Antidérapantes, Respirantes homme",
+    "asin": "B0CKJDBZYR",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 1 - Antidérapantes, Respirantes femme",
+    "asin": "B07G5YFS1L",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 2 - Antidérapantes, Respirantes femme",
+    "asin": "B0DNTPFND6",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "chaussures randonnée prix 3 - Antidérapantes, Respirantes femme",
+    "asin": "B06VXVRR8R",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Chaussure rando enfant mixte",
+    "asin": "B0CB4CM4BV",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Claquettes mixte",
+    "asin": "B0CB9DJJVW",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Claquettes enfant",
+    "asin": "B0BDYN7ZQH",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "child",
+    "ageMin": 3,
+    "ageMax": 17,
+    "tags": []
+  },
+  {
+    "label": "Lunettes de soleil UV400 mixte",
+    "asin": "B0CQYRTFGS",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Crème solaire SPF 50+",
+    "asin": "B08BTD7RFV",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Baume à lèvres hydratant",
+    "asin": "B006DUPURO",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Spray anti-moustique",
+    "asin": "B088RTJXHS",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "RISK_MOSQUITO_REPELLENT"
+    ]
+  },
+  {
+    "label": "Adaptateur de prise universel",
+    "asin": "B0B2DRC76L",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_UNIVERSAL_ADAPTER"
+    ]
+  },
+  {
+    "label": "Lampe frontale - LED, Rechargeable USB",
+    "asin": "B01DNDMSLY",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Gourdes isothermes",
+    "asin": "B01MY09LEL",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Sac a dos randonnée - Résistant à l'eau, Léger",
+    "asin": "B07T9P5Q23",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": [
+      "GEAR_BACKPACK_DAYPACK"
+    ]
+  },
+  {
+    "label": "Mini ventilateur portatif",
+    "asin": "B0BRV61DPY",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "brumisateur",
+    "asin": "B0C7QV2M6D",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "MAROC t-shirts (coton / technique respirant) homme",
+    "asin": "B079NLHSV8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Thermomètre digital",
+    "asin": "B0BTHB8GWJ",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "Batterie externe",
+    "asin": "NONE",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "all",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "BRESIL t-shirts (coton / technique respirant) homme",
+    "asin": "B079NLHSV8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  },
+  {
+    "label": "STATES t-shirts (coton / technique respirant) homme",
+    "asin": "B079NLHSV8",
+    "status": "active",
+    "mustHave": false,
+    "priority": 3,
+    "audience": "adult",
+    "ageMin": 0,
+    "ageMax": 120,
+    "tags": []
+  }
+]
