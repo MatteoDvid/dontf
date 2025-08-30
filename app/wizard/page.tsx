@@ -25,19 +25,65 @@ export default function WizardPage() {
   const [dateEnd, setDateEnd] = useState('');
   const [travelers, setTravelers] = useState(1);
   const [agesText, setAgesText] = useState('30');
+  const [agesInputs, setAgesInputs] = useState<string[]>(['30']);
   const [result, setResult] = useState<ApiResult>({ status: 'idle' });
   const [ai, setAi] = useState<AiResult>({ status: 'idle' });
+  const [showAll, setShowAll] = useState(false);
+
+  function extractPriority(explain: string[]): number {
+    try {
+      const token = (explain || []).find((s) => s.startsWith('priority='));
+      if (!token) return Number.POSITIVE_INFINITY;
+      const v = Number(token.split('=')[1]);
+      return Number.isFinite(v) ? v : Number.POSITIVE_INFINITY;
+    } catch {
+      return Number.POSITIVE_INFINITY;
+    }
+  }
+
+  function colorForDisplayPriority(dp: number): string {
+    if (dp === 1) return 'bg-red-500';
+    if (dp === 2) return 'bg-orange-400';
+    return 'bg-yellow-300 text-gray-900';
+  }
+
+  function computeSeason(countryIso2: string, isoDate?: string): 'winter' | 'spring' | 'summer' | 'autumn' {
+    const d = isoDate ? new Date(isoDate) : new Date();
+    const month = d.getUTCMonth() + 1; // 1..12
+    const south = new Set(['AU', 'NZ', 'ZA', 'AR', 'CL', 'UY', 'PY', 'BO', 'PE', 'BR']);
+    const isSouth = south.has((countryIso2 || '').toUpperCase());
+    // Northern hemisphere seasons (meteorological)
+    let season: 'winter' | 'spring' | 'summer' | 'autumn';
+    if ([12, 1, 2].includes(month)) season = 'winter';
+    else if ([3, 4, 5].includes(month)) season = 'spring';
+    else if ([6, 7, 8].includes(month)) season = 'summer';
+    else season = 'autumn';
+    if (isSouth) {
+      // Invert for southern hemisphere
+      if (season === 'winter') season = 'summer';
+      else if (season === 'summer') season = 'winter';
+      else if (season === 'spring') season = 'autumn';
+      else season = 'spring';
+    }
+    return season;
+  }
 
   const ages = useMemo(
     () =>
-      agesText
-        .split(',')
+      agesInputs
         .map((s) => s.trim())
         .filter(Boolean)
         .map((n) => Number(n))
         .filter((n) => Number.isInteger(n) && n >= 0 && n <= 120),
-    [agesText],
+    [agesInputs],
   );
+
+  // Garder agesText en phase pour la persistance existante
+  useEffect(() => {
+    try {
+      setAgesText(agesInputs.map((s) => s.trim()).join(','));
+    } catch {}
+  }, [agesInputs]);
 
   const onSubmit = useCallback(async () => {
     setResult({ status: 'loading' });
@@ -71,8 +117,12 @@ export default function WizardPage() {
       }
 
       const items = (await res.json()) as Array<ProductItem>;
+      setShowAll(false);
       if (items.length === 0) setResult({ status: 'empty' });
-      else setResult({ status: 'success', items });
+      else {
+        const sorted = items.slice().sort((a, b) => extractPriority(a.explain) - extractPriority(b.explain));
+        setResult({ status: 'success', items: sorted });
+      }
     } catch {
       setResult({ status: 'network-error' });
     }
@@ -106,7 +156,14 @@ export default function WizardPage() {
         }>;
         if (state.destinationCountry) setDestinationCountry(state.destinationCountry);
         if (typeof state.travelers === 'number') setTravelers(state.travelers);
-        if (state.agesText) setAgesText(state.agesText);
+        if (state.agesText) {
+          setAgesText(state.agesText);
+          const parsed = state.agesText
+            .split(',')
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0);
+          setAgesInputs(parsed.length > 0 ? parsed : ['30']);
+        }
         if (state.dateStart) setDateStart(state.dateStart);
         if (state.dateEnd) setDateEnd(state.dateEnd);
       }
@@ -114,15 +171,28 @@ export default function WizardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Ajuster le nombre de champs d'âge en fonction de travelers
+  useEffect(() => {
+    setAgesInputs((prev) => {
+      const t = Math.max(1, Math.min(20, travelers));
+      if (prev.length === t) return prev;
+      if (prev.length < t) {
+        return prev.concat(Array.from({ length: t - prev.length }).map(() => '30'));
+      }
+      return prev.slice(0, t);
+    });
+  }, [travelers]);
+
   const onUpdateAdvices = useCallback(async () => {
     setAi({ status: 'loading' });
     const groupMin = Math.min(...ages);
     const groupMax = Math.max(...ages);
+    const season = computeSeason(destinationCountry, dateStart || undefined);
     const payload = {
       destinationCountry: destinationCountry.toUpperCase(),
       marketplaceCountry: 'FR',
       groupAge: { min: groupMin, max: groupMax },
-      season: 'any',
+      season,
       tripType: 'general',
       constraints: { maxTags: 6, promptVersion: PROMPT_VERSION },
     };
@@ -226,12 +296,28 @@ export default function WizardPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs mb-1">Âges (séparés par des virgules)</label>
-                      <input
-                        className="w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none"
-                        value={agesText}
-                        onChange={(e) => setAgesText(e.target.value)}
-                      />
+                      <label className="block text-xs mb-1">Âges par personne</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {agesInputs.map((val, idx) => (
+                          <input
+                            key={idx}
+                            type="number"
+                            min={0}
+                            max={120}
+                            placeholder={`Âge ${idx + 1}`}
+                            className="w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none"
+                            value={val}
+                            onChange={(e) => {
+                              const v = e.target.value.replace(/[^0-9]/g, '');
+                              setAgesInputs((prev) => {
+                                const next = prev.slice();
+                                next[idx] = v;
+                                return next;
+                              });
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -301,24 +387,49 @@ export default function WizardPage() {
                 <p className="text-red-200">Erreur réseau — réessaie plus tard.</p>
               )}
               {result.status === 'success' && (
-                <ul className="divide-y divide-white/10">
-                  {result.items.map((p) => (
-                    <li key={p.asin} className="py-3 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{p.label}</p>
-                        <p className="text-xs text-white/80">ASIN: {p.asin}</p>
-                        <p className="text-xs text-white/80">{p.explain.join(' • ')}</p>
-                      </div>
-                      <a
-                        className="rounded-lg bg-white/90 text-gray-900 px-3 py-1.5 hover:bg-white"
-                        href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`}
-                        target="_blank"
+                <>
+                  <ul className={`divide-y divide-white/10 ${showAll ? 'max-h-96 overflow-y-auto pr-2 modern-scroll' : ''}`}>
+                    {(() => {
+                      const displayed = showAll ? result.items : result.items.slice(0, 5);
+                      const rawPriorities = displayed.map((it) => extractPriority(it.explain)).filter((n) => Number.isFinite(n));
+                      const minP = rawPriorities.length > 0 ? Math.min(...rawPriorities) : 1;
+                      return displayed.map((p) => {
+                        const raw = extractPriority(p.explain);
+                        const dp = Number.isFinite(raw) ? Math.max(1, raw - (minP - 1)) : 3;
+                        const color = colorForDisplayPriority(dp);
+                        return (
+                          <li key={p.asin} className="py-3 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="font-medium truncate">{p.label}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center justify-center rounded-full px-2.5 py-1 text-xs font-semibold ${color}`}>
+                                Priorité {dp}
+                              </span>
+                              <a
+                                className="rounded-lg bg-white/90 text-gray-900 px-3 py-1.5 hover:bg-white whitespace-nowrap"
+                                href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`}
+                                target="_blank"
+                              >
+                                Acheter
+                              </a>
+                            </div>
+                          </li>
+                        );
+                      });
+                    })()}
+                  </ul>
+                  {!showAll && result.items.length > 5 && (
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={() => setShowAll(true)}
+                        className="inline-flex items-center justify-center rounded-xl border border-white/30 bg-white/10 px-4 py-2 text-white hover:bg-white/20"
                       >
-                        Acheter
-                      </a>
-                    </li>
-                  ))}
-                </ul>
+                        Afficher tous les résultats ({result.items.length})
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

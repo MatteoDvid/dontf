@@ -30,6 +30,28 @@ export async function POST(request: Request) {
     const groupMinAge = Math.min(...wizard.ages);
     const groupMaxAge = Math.max(...wizard.ages);
 
+    function computeSeason(
+      countryIso2: string,
+      isoDate?: string,
+    ): 'winter' | 'spring' | 'summer' | 'autumn' {
+      const d = isoDate ? new Date(isoDate) : new Date();
+      const month = d.getUTCMonth() + 1;
+      const south = new Set(['AU', 'NZ', 'ZA', 'AR', 'CL', 'UY', 'PY', 'BO', 'PE', 'BR']);
+      const isSouth = south.has((countryIso2 || '').toUpperCase());
+      let season: 'winter' | 'spring' | 'summer' | 'autumn';
+      if ([12, 1, 2].includes(month)) season = 'winter';
+      else if ([3, 4, 5].includes(month)) season = 'spring';
+      else if ([6, 7, 8].includes(month)) season = 'summer';
+      else season = 'autumn';
+      if (isSouth) {
+        if (season === 'winter') season = 'summer';
+        else if (season === 'summer') season = 'winter';
+        else if (season === 'spring') season = 'autumn';
+        else season = 'spring';
+      }
+      return season;
+    }
+
     // Déduire la liste blanche dynamique de tags (TagId) depuis le Sheet
     const allowedTagIds: string[] = Array.from(
       new Set(
@@ -45,10 +67,15 @@ export async function POST(request: Request) {
     if (aiActive && effectiveTags.length === 0) {
       try {
         const maxTags = Number(process.env.AI_MAX_TAGS ?? '6');
+        const season = computeSeason(
+          wizard.destinationCountry,
+          (wizard as any).dates?.start as string | undefined,
+        );
         const explain = await getTagsForWizardSummary({
           destinationCountry: wizard.destinationCountry,
           marketplaceCountry: wizard.marketplaceCountry ?? wizard.destinationCountry,
           groupAge: { min: groupMinAge, max: groupMaxAge },
+          season,
           constraints: { maxTags: Math.max(1, Math.min(6, maxTags)), promptVersion: PROMPT_VERSION },
         } as any, {
           allowedTags: allowedTagIds.length > 0 ? allowedTagIds : undefined,
