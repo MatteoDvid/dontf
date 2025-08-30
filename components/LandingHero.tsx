@@ -117,13 +117,12 @@ export default function LandingHero() {
               Choisissez votre destination et vos dates
             </h1>
             <p className="mt-6 text-white/90">
-              Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae
-              pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu
-              aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas.
+              Découvrez les objets essentiels pour votre voyage grâce à notre IA qui analyse votre destination, 
+              vos dates et votre profil de voyageur. Ne partez plus jamais sans l'indispensable !
             </p>
             <p className="mt-4 text-white/90">
-              Iaculis massa nisl malesuada lacinia interdum nunc posuere. Ut hendrerit semper vel class
-              aptent taciti sociosqu. Ad litora torquent per conubia nostra inceptos himenaeos.
+              Des recommandations personnalisées en quelques clics pour transformer chaque voyage en 
+              aventure parfaitement préparée.
             </p>
           </div>
         </div>
