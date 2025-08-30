@@ -18,6 +18,27 @@ body {
   background: rgb(var(--background-rgb));
 }
 
+/* Cartes et champs – verre dépoli neutre */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.08));
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.glass-field {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.72));
+}
+
+.glass-input {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.8));
+}
+
+/* Badges de priorité – neutres (si utilisés) */
+.badge-prio-1 { background: linear-gradient(90deg, #ef4444, #f97316); color: #fff; }
+.badge-prio-2 { background: linear-gradient(90deg, #f59e0b, #fde68a); color: #111827; }
+.badge-prio-3 { background: linear-gradient(90deg, #e5e7eb, #f3f4f6); color: #111827; }
+
 /* Scrollbar moderne pour zones défilantes */
 .modern-scroll {
   scrollbar-width: thin; /* Firefox */

@@ -33,12 +33,12 @@ export async function getTagsForWizardSummary(
   const aiEnabled = String(process.env.AI_ENABLED ?? 'false').toLowerCase() === 'true';
   const apiKey = process.env.OPENAI_API_KEY;
   const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || '1200');
+  const timeoutMs = Number(process.env.OPENAI_TIMEOUT_MS || '100000');
 
   // Minimal fallback V1: return empty tags when AI disabled or no key
   let response: ExplainResponse = {
     tags: [],
-    meta: { promptVersion: parsed.constraints.promptVersion },
+    meta: { promptVersion: parsed.constraints.promptVersion, source: 'disabled', reason: 'AI_DISABLED_OR_NO_KEY' },
   };
 
   if (aiEnabled && apiKey) {
@@ -53,6 +53,7 @@ export async function getTagsForWizardSummary(
         'Contraintes:',
         `- max ${parsed.constraints.maxTags} tags pertinents (0..${parsed.constraints.maxTags})`,
         '- Chaque tag: { id, score ∈ [0,1] }',
+        '- Propose aussi une liste "exclude" de tags à écarter si non pertinents (toujours issus de la allowlist).',
         '- Pas de texte hors JSON.',
       ].join('\n');
 
@@ -60,6 +61,7 @@ export async function getTagsForWizardSummary(
         destinationCountry: parsed.destinationCountry,
         marketplaceCountry: parsed.marketplaceCountry ?? parsed.destinationCountry,
         groupAge: parsed.groupAge,
+        dates: parsed.dates,
         season: parsed.season ?? 'any',
         tripType: parsed.tripType ?? 'general',
         maxTags: parsed.constraints.maxTags,
@@ -84,7 +86,7 @@ export async function getTagsForWizardSummary(
               {
                 role: 'user',
                 content: [
-                  'Retourne un JSON: { "tags": [ { "id": TagID, "score": number } ], "meta": { "promptVersion": string } }.',
+                  'Retourne un JSON: { "tags": [ { "id": TagID, "score": number } ], "exclude": [ { "id": TagID, "score"?: number } ], "meta": { "promptVersion": string } }.',
                   'Voici la requête normalisée:',
                   JSON.stringify(user),
                 ].join('\n'),
@@ -105,6 +107,7 @@ export async function getTagsForWizardSummary(
           parsedJson = content;
         }
         const validated = ExplainResponseSchema.parse(parsedJson);
+        const rawCount = Array.isArray(validated.tags) ? validated.tags.length : 0;
         const allow = new Set(allowlist);
         const unique: Record<string, number> = {};
         for (const t of validated.tags || []) {
@@ -115,17 +118,48 @@ export async function getTagsForWizardSummary(
           .map(([id, score]) => ({ id, score }))
           .sort((a, b) => (b.score as number) - (a.score as number))
           .slice(0, parsed.constraints.maxTags);
+        let reason: string | undefined = undefined;
+        if (rawCount === 0) reason = 'OPENAI_RETURNED_EMPTY';
+        else if (compact.length === 0) reason = 'NO_ALLOWED_TAGS_MATCH';
         response = {
           tags: compact as any,
-          meta: { promptVersion: parsed.constraints.promptVersion },
-        };
-      } catch {
+          exclude: Array.isArray(validated.exclude)
+            ? (validated.exclude as any[]).filter((e) => allow.has(e.id)).slice(0, parsed.constraints.maxTags)
+            : [],
+          meta: { promptVersion: parsed.constraints.promptVersion, source: 'openai', ...(reason ? { reason } : {}) },
+        } as any;
+      } catch (err: any) {
         clearTimeout(timer);
-        response = { tags: [], meta: { promptVersion: parsed.constraints.promptVersion } };
+        let reason = 'OPENAI_REQUEST_FAILED';
+        const msg = (err && (err.message || String(err))) as string;
+        if (err && (err.name === 'AbortError' || /aborted/i.test(String(err)))) {
+          reason = 'OPENAI_TIMEOUT';
+        } else if (typeof msg === 'string' && /^openai_http_\d+/.test(msg)) {
+          reason = msg.toUpperCase();
+        }
+        try {
+          console.error('[ai] OpenAI error:', msg);
+        } catch {}
+        response = { tags: [], meta: { promptVersion: parsed.constraints.promptVersion, source: 'error', reason } };
       }
-    } catch {
-      response = { tags: [], meta: { promptVersion: parsed.constraints.promptVersion } };
+    } catch (outerErr: any) {
+      try {
+        console.error('[ai] OpenAI outer error:', outerErr?.message || String(outerErr));
+      } catch {}
+      response = { tags: [], meta: { promptVersion: parsed.constraints.promptVersion, source: 'error', reason: 'OPENAI_UNEXPECTED_ERROR' } };
     }
+  }
+
+  // If still empty tags → fallback to allowlist-derived tags to ensure filtering works
+  if (!response.tags || response.tags.length === 0) {
+    const allowlist = Array.isArray(options?.allowedTags) && options!.allowedTags!.length > 0
+      ? (options!.allowedTags as string[])
+      : ALL_TAGS;
+    const chosen = allowlist.slice(0, parsed.constraints.maxTags).map((id) => ({ id, score: 0.5 as number })) as any;
+    response = {
+      tags: chosen as any,
+      meta: { promptVersion: parsed.constraints.promptVersion, source: 'fallback', reason: response.meta?.reason },
+    };
   }
 
   inMemoryCache.set(key, { value: response, expiresAt: now + getTtlMs() });

@@ -1,6 +1,5 @@
 import { google } from 'googleapis';
 import { ProductRecordSchema, type ProductRecord } from './schemas';
-import type { TagId } from './tags';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -13,7 +12,7 @@ type SheetsConfig = {
 
 function getConfig(): SheetsConfig | null {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  const range = process.env.GOOGLE_SHEETS_PRODUCTS_RANGE || 'Products!A:Z';
+  const range = process.env.GOOGLE_SHEETS_PRODUCTS_RANGE || 'DF!A:Z';
   const serviceEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || '';
   const serviceKey = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '';
   if (!spreadsheetId || !serviceEmail || !serviceKey) return null;
@@ -85,7 +84,7 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
     range:
       (cfg?.range as string) ||
       (process.env.GOOGLE_SHEETS_PRODUCTS_RANGE as string) ||
-      'Products!A:Z',
+      'DF!A:Z',
   });
   const values = res.data.values || [];
   if (values.length === 0) return [];
@@ -114,8 +113,35 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
     ageMin: ['agemin', 'age min', 'age_min', 'age-min'],
     ageMax: ['agemax', 'age max', 'age_max', 'age-max'],
     tags: ['tags', 'mots cles', 'mots-cles', 'mots_cles', 'keywords'],
+    tokens: ['_tokens', 'tokens', '_token', 'token'],
     countryCodes: ['countrycodes', 'pays', 'pays cibles', 'countries', 'country'],
   };
+  function normalizeCountryNameToIso2(input: string | undefined): string | null {
+    const v = String(input || '').trim().toLowerCase();
+    if (!v) return null;
+    const map: Record<string, string> = {
+      // français
+      'france': 'FR', 'bresil': 'BR', 'brésil': 'BR', 'maroc': 'MA', 'etats-unis': 'US', 'etats unis': 'US', 'thailande': 'TH', 'thaïlande': 'TH',
+      // anglais (quelques variantes)
+      'brazil': 'BR', 'morocco': 'MA', 'states': 'US', 'united states': 'US', 'usa': 'US', 'thailand': 'TH', 'fr': 'FR', 'br': 'BR', 'us': 'US', 'ma': 'MA', 'th': 'TH',
+    };
+    // retirer accents
+    const noAcc = v.normalize('NFD').replace(/\p{Diacritic}+/gu, '');
+    const key = noAcc.replace(/\s+/g, ' ');
+    const iso = map[key] || map[key.toLowerCase()];
+    if (iso) return iso;
+    // heuristique: codes déjà ISO2
+    if (/^[a-z]{2}$/i.test(v)) return v.toUpperCase();
+    return null;
+  }
+
+  function parseCountries(input: string | undefined): string[] {
+    const raw = String(input || '').trim();
+    if (!raw) return [];
+    const parts = raw.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+    const iso = parts.map((p) => normalizeCountryNameToIso2(p)).filter(Boolean) as string[];
+    return Array.from(new Set(iso));
+  }
 
   function buildHeaderIndex(h: string[]): Record<string, number> {
     const indexByCanonical: Record<string, number> = {};
@@ -139,42 +165,45 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
   const headerIndex = buildHeaderIndex(header);
   const idx = (name: string) =>
     typeof headerIndex[name] === 'number' ? (headerIndex as any)[name] : header.indexOf(name);
-  const synonymToTag: Record<string, TagId> = {
-    // gear
-    backpack: 'GEAR_BACKPACK_DAYPACK',
-    sac: 'GEAR_BACKPACK_DAYPACK',
-    'sac a dos': 'GEAR_BACKPACK_DAYPACK',
-    adapter: 'GEAR_UNIVERSAL_ADAPTER',
-    adaptateur: 'GEAR_UNIVERSAL_ADAPTER',
-    power: 'GEAR_UNIVERSAL_ADAPTER',
-    powerbank: 'GEAR_POWER_BANK',
-    'batterie externe': 'GEAR_POWER_BANK',
-    bottle: 'GEAR_TRAVEL_BOTTLES',
-    flacon: 'GEAR_TRAVEL_BOTTLES',
-    gourde: 'GEAR_TRAVEL_BOTTLES',
-    poncho: 'GEAR_RAIN_PONCHO',
-    rain: 'GEAR_RAIN_PONCHO',
-    // clothing
-    thermal: 'CLOTHING_THERMAL_LAYER',
-    thermals: 'CLOTHING_THERMAL_LAYER',
-    'base-layer': 'CLOTHING_THERMAL_LAYER',
-    'cold-weather': 'CLOTHING_THERMAL_LAYER',
-    // essentials
-    'document pouch': 'ESSENTIALS_DOCUMENT_POUCH',
-    'pochette documents': 'ESSENTIALS_DOCUMENT_POUCH',
-    // risk-safety
-    'insect-repellent': 'RISK_MOSQUITO_REPELLENT',
-    moustique: 'RISK_MOSQUITO_REPELLENT',
-  };
+  function normalizeToken(input: string): string | null {
+    const t = String(input || '').trim().toLowerCase();
+    if (!t) return null;
+    // enlever quotes simples/doubles autour
+    const unquoted = t.replace(/^['"]|['"]$/g, '').trim();
+    // bannir tokens trop longs ou uniquement non-alphanum
+    if (unquoted.length > 64) return null;
+    const cleaned = unquoted
+      .replace(/[\u0300-\u036f]/g, '') // diacritiques
+      .replace(/\s+/g, ' ');
+    if (!/[a-z0-9]/.test(cleaned)) return null;
+    return cleaned;
+  }
 
-  function mapToTagIds(freeform: string[]): TagId[] {
-    const out: TagId[] = [];
-    for (const raw of freeform) {
-      const key = raw.toLowerCase();
-      const mapped = synonymToTag[key as keyof typeof synonymToTag];
-      if (mapped && !out.includes(mapped)) out.push(mapped);
+  function parseCommaSeparated(input: string | undefined): string[] {
+    const raw = String(input || '').trim();
+    if (!raw) return [];
+    const parts = raw.split(',').map((s) => normalizeToken(s)).filter(Boolean) as string[];
+    return Array.from(new Set(parts));
+  }
+
+  function parsePythonSet(input: string | undefined): string[] {
+    const raw = String(input || '').trim();
+    if (!raw) return [];
+    // Exemple: {'t', 'coton', 'respirant'}
+    const inside = raw.startsWith('{') && raw.endsWith('}') ? raw.slice(1, -1) : raw;
+    const candidates: string[] = [];
+    // extraire les séquences entre quotes
+    const regex = /['"]([^'"]+)['"]/g;
+    let m: RegExpExecArray | null;
+    while ((m = regex.exec(inside)) !== null) {
+      candidates.push(m[1]);
     }
-    return out.slice(0, 6);
+    if (candidates.length === 0) {
+      // fallback: split virgule
+      candidates.push(...inside.split(','));
+    }
+    const tokens = candidates.map((s) => normalizeToken(s)).filter(Boolean) as string[];
+    return Array.from(new Set(tokens));
   }
   function normalizeBoolean(input: string | undefined): boolean {
     const v = String(input || '').trim().toLowerCase();
@@ -205,11 +234,10 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
   }
 
   const mapRow = (r: string[], rowIndex: number): ProductRecord | null => {
-    const freeformTags = (r[idx('tags')] || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean);
-    const tags = mapToTagIds(freeformTags);
+    const freeformTags = parseCommaSeparated(r[idx('tags')]);
+    const tokenColIdx = idx('tokens');
+    const tokenSet = tokenColIdx >= 0 ? parsePythonSet(r[tokenColIdx]) : [];
+    const tags = Array.from(new Set([...freeformTags, ...tokenSet])).slice(0, 20);
 
     const candidate = {
       label: (r[idx('label')] || r[idx('Nom' as any)] || '').toString().trim(),
@@ -221,6 +249,7 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
       ageMin: toInt(r[idx('ageMin')] ?? r[idx('age min' as any)], 0),
       ageMax: toInt(r[idx('ageMax')] ?? r[idx('age max' as any)], 120),
       tags: tags as any,
+      countryCodes: parseCountries(r[idx('countryCodes')]),
     };
 
     const parsed = ProductRecordSchema.safeParse(candidate);
@@ -237,11 +266,27 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
   const products = rows
     .map((r, i) => mapRow(r, i))
     .filter((p): p is ProductRecord => p !== null);
+  // Déduplication par ASIN: garder le meilleur (mustHave puis priority minimale)
+  const uniqByAsin = new Map<string, ProductRecord>();
+  for (const p of products) {
+    const existing = uniqByAsin.get(p.asin);
+    if (!existing) {
+      uniqByAsin.set(p.asin, p);
+      continue;
+    }
+    const better = (a: ProductRecord, b: ProductRecord) => {
+      if (a.mustHave !== b.mustHave) return a.mustHave ? a : b;
+      if (a.priority !== b.priority) return a.priority < b.priority ? a : b;
+      return a; // garder le premier sinon
+    };
+    uniqByAsin.set(p.asin, better(existing, p));
+  }
+  const deduped = Array.from(uniqByAsin.values());
   // write cache
   try {
     await fs.mkdir(path.join(process.cwd(), 'data'), { recursive: true });
-    await fs.writeFile(cachePath, JSON.stringify(products, null, 2), 'utf-8');
+    await fs.writeFile(cachePath, JSON.stringify(deduped, null, 2), 'utf-8');
   } catch {}
 
-  return products;
+  return deduped;
 }
