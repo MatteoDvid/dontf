@@ -107,7 +107,7 @@ export default function WizardPage() {
         dates: dateStart && dateEnd ? { start: new Date(dateStart).toISOString(), end: new Date(dateEnd).toISOString() } : undefined,
         season,
         tripType: 'general',
-        constraints: { maxTags: 6, promptVersion: PROMPT_VERSION },
+        constraints: { maxTags: (['IS','NO','SE','FI'].includes(destinationCountry.toUpperCase()) && season === 'summer') ? 12 : 6, promptVersion: PROMPT_VERSION },
       };
 
       let tagsForRecommend: string[] | undefined = undefined;

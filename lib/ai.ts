@@ -46,6 +46,8 @@ export async function getTagsForWizardSummary(
       const allowlist = Array.isArray(options?.allowedTags) && options!.allowedTags!.length > 0
         ? (options!.allowedTags as string[])
         : ALL_TAGS;
+      const nordic = new Set(['IS', 'NO', 'SE', 'FI']);
+      const isNordicSummer = nordic.has(parsed.destinationCountry) && (parsed.season || '').toLowerCase() === 'summer';
       const system = [
         'Tu es un assistant de tagging de voyage. Réponds en JSON strict uniquement.',
         'Ne propose que des tags parmi la liste blanche suivante (TagID):',
@@ -54,6 +56,12 @@ export async function getTagsForWizardSummary(
         `- max ${parsed.constraints.maxTags} tags pertinents (0..${parsed.constraints.maxTags})`,
         '- Chaque tag: { id, score ∈ [0,1] }',
         '- Propose aussi une liste "exclude" de tags à écarter si non pertinents (toujours issus de la allowlist).',
+        ...(isNordicSummer ? [
+          'Règle spéciale été nordique (IS/NO/SE/FI + season=summer):',
+          '- Exclure UNIQUEMENT: doudoune, parka, puffer, ski, base-layer thermique épais',
+          '- NE PAS exclure: polaire léger, bonnet fin, coupe-vent, pluie, waterproof',
+          '- Favoriser: core-kit, rain, waterproof, randonnée/trek, chaussures antidérapantes/cramponnables, sacs',
+        ] : []),
         '- Pas de texte hors JSON.',
       ].join('\n');
 
