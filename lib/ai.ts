@@ -49,6 +49,7 @@ export async function getTagsForWizardSummary(
       const nordic = new Set(['IS', 'NO', 'SE', 'FI']);
       const isNordicSummer = nordic.has(parsed.destinationCountry) && (parsed.season || '').toLowerCase() === 'summer';
       const isBrazilSummer = parsed.destinationCountry === 'BR' && (parsed.season || '').toLowerCase() === 'summer';
+      const isBrazilWinter = parsed.destinationCountry === 'BR' && (parsed.season || '').toLowerCase() === 'winter';
       const isMoroccoSummer = parsed.destinationCountry === 'MA' && (parsed.season || '').toLowerCase() === 'summer';
       const system = [
         'Tu es un assistant de tagging de voyage. Réponds en JSON strict uniquement.',
@@ -69,6 +70,11 @@ export async function getTagsForWizardSummary(
           'Règle spéciale Brésil été (BR + season=summer):',
           '- Favoriser fortement: core-kit, randonnée/trek, chaussures, waterproof/pluie, anti-moustique',
           '- Éviter les items hiver (thermal, doudoune, parka)',
+        ] : []),
+        ...(isBrazilWinter ? [
+          'Règle spéciale Brésil hiver (BR + season=winter):',
+          '- Favoriser: core-kit, randonnée/trek, chaussures, waterproof/pluie, adaptateur universel, power bank',
+          '- Éviter l’hiver lourd (doudoune/parka/puffer) ; privilégier couches légères si besoin',
         ] : []),
         ...(isMoroccoSummer ? [
           'Règle spéciale Maroc été (MA + season=summer):',

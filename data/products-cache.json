@@ -656,14 +656,14 @@
     ]
   },
   {
-    "label": "Chaussure rando enfant mixte",
+    "label": "Chaussure rando enfant unisex",
     "asin": "B0CB4CM4BV",
     "status": "active",
     "mustHave": false,
     "priority": 3,
     "audience": "child",
     "ageMin": 3,
-    "ageMax": 17,
+    "ageMax": 16,
     "tags": [
       "chaussure",
       "rando",
