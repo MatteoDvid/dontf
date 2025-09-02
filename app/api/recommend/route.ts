@@ -120,6 +120,15 @@ export async function POST(request: Request) {
     if (aiActive && effectiveTags.length === 0) {
       try {
         const maxTags = Number(process.env.AI_MAX_TAGS ?? '100');
+        // Scope allowlist aux tags des produits destination (+ universels)
+        const destScopedAllow: string[] = Array.from(new Set(
+          validatedProducts
+            .filter((p: any) => {
+              const cc: string[] = Array.isArray(p.countryCodes) ? (p.countryCodes as string[]) : [];
+              return cc.length === 0 || cc.includes(wizard.destinationCountry.toUpperCase());
+            })
+            .flatMap((p: any) => (Array.isArray(p.tags) ? (p.tags as string[]) : []))
+        ));
         const explain = await getTagsForWizardSummary({
           destinationCountry: wizard.destinationCountry,
           marketplaceCountry: wizard.marketplaceCountry ?? wizard.destinationCountry,
@@ -128,7 +137,7 @@ export async function POST(request: Request) {
           season: tripSeason,
           constraints: { maxTags: Math.max(1, Math.min(400, maxTags)), promptVersion: PROMPT_VERSION },
         } as any, {
-          allowedTags: allowedTagIds.length > 0 ? allowedTagIds : undefined,
+          allowedTags: destScopedAllow.length > 0 ? destScopedAllow : (allowedTagIds.length > 0 ? allowedTagIds : undefined),
         });
         excludedTagsFromAi = new Set<string>((explain as any).exclude?.map((e: any) => e.id) || []);
         effectiveTags = (explain.tags || [])

@@ -661,9 +661,9 @@
     "status": "active",
     "mustHave": false,
     "priority": 3,
-    "audience": "all",
-    "ageMin": 0,
-    "ageMax": 120,
+    "audience": "child",
+    "ageMin": 3,
+    "ageMax": 17,
     "tags": [
       "chaussure",
       "rando",

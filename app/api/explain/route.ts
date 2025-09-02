@@ -16,11 +16,16 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    // Build dynamic allowlist from sheet
+    // Build dynamic allowlist from sheet, scoped to destination (+ universels)
     const products = await readProductsFromCacheOrSheet();
+    const dest = parsed.data.destinationCountry.toUpperCase();
+    const scoped = products.filter((p: any) => {
+      const cc: string[] = Array.isArray(p.countryCodes) ? (p.countryCodes as string[]) : [];
+      return cc.length === 0 || cc.includes(dest);
+    });
     const allowlist: string[] = Array.from(
       new Set(
-        products.flatMap((p: any) => (Array.isArray(p.tags) ? (p.tags as string[]) : [])),
+        scoped.flatMap((p: any) => (Array.isArray(p.tags) ? (p.tags as string[]) : [])),
       ),
     );
     const limitedAllowlist = allowlist.slice(0, 400); // éviter prompts trop longs

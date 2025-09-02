@@ -48,6 +48,8 @@ export async function getTagsForWizardSummary(
         : ALL_TAGS;
       const nordic = new Set(['IS', 'NO', 'SE', 'FI']);
       const isNordicSummer = nordic.has(parsed.destinationCountry) && (parsed.season || '').toLowerCase() === 'summer';
+      const isBrazilSummer = parsed.destinationCountry === 'BR' && (parsed.season || '').toLowerCase() === 'summer';
+      const isMoroccoSummer = parsed.destinationCountry === 'MA' && (parsed.season || '').toLowerCase() === 'summer';
       const system = [
         'Tu es un assistant de tagging de voyage. Réponds en JSON strict uniquement.',
         'Ne propose que des tags parmi la liste blanche suivante (TagID):',
@@ -56,11 +58,23 @@ export async function getTagsForWizardSummary(
         `- max ${parsed.constraints.maxTags} tags pertinents (0..${parsed.constraints.maxTags})`,
         '- Chaque tag: { id, score ∈ [0,1] }',
         '- Propose aussi une liste "exclude" de tags à écarter si non pertinents (toujours issus de la allowlist).',
+        '- Si la allowlist contient "core-kit", inclure "core-kit" (score élevé).',
         ...(isNordicSummer ? [
           'Règle spéciale été nordique (IS/NO/SE/FI + season=summer):',
           '- Exclure UNIQUEMENT: doudoune, parka, puffer, ski, base-layer thermique épais',
           '- NE PAS exclure: polaire léger, bonnet fin, coupe-vent, pluie, waterproof',
           '- Favoriser: core-kit, rain, waterproof, randonnée/trek, chaussures antidérapantes/cramponnables, sacs',
+        ] : []),
+        ...(isBrazilSummer ? [
+          'Règle spéciale Brésil été (BR + season=summer):',
+          '- Favoriser fortement: core-kit, randonnée/trek, chaussures, waterproof/pluie, anti-moustique',
+          '- Éviter les items hiver (thermal, doudoune, parka)',
+        ] : []),
+        ...(isMoroccoSummer ? [
+          'Règle spéciale Maroc été (MA + season=summer):',
+          '- Favoriser: core-kit, chaussures de rando/trek, sac à dos, bouteilles/gourde, waterproof/pluie, adaptateur universel, power bank',
+          '- Ne pas se limiter à solaire/baume uniquement',
+          '- Éviter les items hiver lourds (doudoune/parka)',
         ] : []),
         '- Pas de texte hors JSON.',
       ].join('\n');
@@ -163,12 +177,33 @@ export async function getTagsForWizardSummary(
     const allowlist = Array.isArray(options?.allowedTags) && options!.allowedTags!.length > 0
       ? (options!.allowedTags as string[])
       : ALL_TAGS;
-    const chosen = allowlist.slice(0, parsed.constraints.maxTags).map((id) => ({ id, score: 0.5 as number })) as any;
+    const chosenSource = allowlist.slice(0, parsed.constraints.maxTags);
+    // Préférer core-kit si disponible
+    const withCore = new Set<string>(chosenSource);
+    withCore.add('core-kit');
+    const chosen = Array.from(withCore).slice(0, parsed.constraints.maxTags).map((id) => ({ id, score: id === 'core-kit' ? 0.9 as number : 0.5 as number })) as any;
     response = {
       tags: chosen as any,
       meta: { promptVersion: parsed.constraints.promptVersion, source: 'fallback', reason: response.meta?.reason },
     };
   }
+
+  // Enforce presence of core-kit globally si autorisé
+  try {
+    const allowForCore = Array.isArray(options?.allowedTags) && options!.allowedTags!.length > 0
+      ? (options!.allowedTags as string[])
+      : ALL_TAGS;
+    if (allowForCore.includes('core-kit')) {
+      const already = Array.isArray(response.tags) && response.tags.some((t: any) => t.id === 'core-kit');
+      if (!already) {
+        const max = parsed.constraints.maxTags;
+        const next = Array.isArray(response.tags) ? (response.tags as any[]).slice() : [];
+        next.unshift({ id: 'core-kit', score: 0.9 });
+        if (next.length > max) next.length = max;
+        response = { ...response, tags: next as any } as any;
+      }
+    }
+  } catch {}
 
   inMemoryCache.set(key, { value: response, expiresAt: now + getTtlMs() });
   return ExplainResponseSchema.parse(response);
