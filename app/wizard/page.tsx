@@ -555,12 +555,10 @@ export default function WizardPage() {
                 <>
                   <ul className={`${showAll ? 'max-h-96 overflow-y-auto pr-2 modern-scroll' : ''} divide-y divide-gray-200/60` }>
                     {(() => {
-                      const displayed = showAll ? result.items : result.items.slice(0, 6);
-                      const rawPriorities = displayed.map((it) => extractPriority(it.explain)).filter((n) => Number.isFinite(n));
-                      const minP = rawPriorities.length > 0 ? Math.min(...rawPriorities) : 1;
+                      const TOP_COUNT = 5;
+                      const displayed = showAll ? result.items : result.items.slice(0, TOP_COUNT);
                       return displayed.map((p, idx) => {
-                        const raw = extractPriority(p.explain);
-                        const dp = Number.isFinite(raw) ? Math.max(1, raw - (minP - 1)) : 3;
+                        const dp = idx < TOP_COUNT ? 1 : 2;
                         return (
                           <li key={p.asin} className="py-3 flex items-center gap-4">
                             <div className="flex-1 min-w-0 truncate">
@@ -575,7 +573,7 @@ export default function WizardPage() {
                       });
                     })()}
                   </ul>
-                  {!showAll && result.items.length > 6 && (
+                  {!showAll && result.items.length > 5 && (
                     <div className="mt-4 text-center">
                       <button
                         onClick={() => setShowAll(true)}

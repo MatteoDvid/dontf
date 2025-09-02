@@ -121,7 +121,7 @@ export async function readProductsFromCacheOrSheet(): Promise<ProductRecord[]> {
     if (!v) return null;
     const map: Record<string, string> = {
       // français
-      'france': 'FR', 'bresil': 'BR', 'brésil': 'BR', 'maroc': 'MA', 'etats-unis': 'US', 'etats unis': 'US', 'thailande': 'TH', 'thaïlande': 'TH',
+      'france': 'FR', 'bresil': 'BR', 'brésil': 'BR', 'maroc': 'MA', 'etats-unis': 'US', 'etats unis': 'US', 'thailande': 'TH', 'thaïlande': 'TH', 'islande': 'IS',
       // anglais (quelques variantes)
       'brazil': 'BR', 'morocco': 'MA', 'states': 'US', 'united states': 'US', 'usa': 'US', 'thailand': 'TH', 'fr': 'FR', 'br': 'BR', 'us': 'US', 'ma': 'MA', 'th': 'TH',
     };
