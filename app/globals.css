@@ -16,6 +16,7 @@ body,
 body {
   color: rgb(var(--foreground-rgb));
   background: rgb(var(--background-rgb));
+  font-family: var(--font-nunito-sans), system-ui, sans-serif;
 }
 
 /* Cartes et champs – verre dépoli neutre */
@@ -58,4 +59,157 @@ body {
 }
 .modern-scroll::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.5));
+}
+
+/* Styles pour le nouveau design landing */
+.hero-select {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.hero-select option {
+  background: rgba(17, 24, 39, 0.95);
+  color: white;
+}
+
+/* Hero Form Container - Spécifications Webflow exactes */
+.hero-form {
+  display: flex;
+  flex-flow: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 860px;
+  margin-top: 120px;
+  margin-bottom: 70px;
+  padding: 40px 35px 22px;
+  gap: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  background: rgba(0, 0, 0, 0.05);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+/* Grille interne pour les champs */
+.hero-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+/* Labels des champs */
+.hero-label {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 12px;
+  font-family: var(--font-nunito-sans), system-ui, sans-serif;
+}
+
+/* Champs d'input */
+.hero-input,
+.hero-select {
+  height: 56px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.32);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  padding: 0 18px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 16px;
+  font-family: var(--font-nunito-sans), system-ui, sans-serif;
+  outline: none;
+  transition: border-color 0.2s ease;
+  cursor: pointer;
+}
+
+.hero-input:focus,
+.hero-select:focus {
+  border-color: rgba(255, 255, 255, 0.35);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.hero-input::placeholder {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* Ligne pour les dates */
+.date-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  width: 100%;
+}
+
+/* Bouton CTA */
+.hero-cta {
+  height: 60px;
+  border-radius: 9999px;
+  background: #fff;
+  color: #0f0f0f;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--font-nunito-sans), system-ui, sans-serif;
+  padding: 0 32px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+  transition: all 0.2s ease;
+  margin-top: 10px;
+}
+
+.hero-cta:hover {
+  background: #F7F7F7;
+  transform: translateY(-1px);
+}
+
+.hero-cta:active {
+  transform: translateY(0);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.hero-cta-icon {
+  width: 19px;
+  height: 21px;
+  flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 991px) {
+  .hero-form {
+    max-width: 70%;
+  }
+  
+  .hero-fields {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero-form {
+    max-width: 100%;
+    margin-top: 80px;
+  }
+  
+  .hero-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 479px) {
+  .hero-form {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  
+  .date-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }

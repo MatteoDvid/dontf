@@ -118,7 +118,7 @@ export default function LandingHero() {
             </h1>
             <p className="mt-6 text-white/90">
               Découvrez les objets essentiels pour votre voyage grâce à notre IA qui analyse votre destination, 
-              vos dates et votre profil de voyageur. Ne partez plus jamais sans l'indispensable !
+              vos dates et votre profil de voyageur. Ne partez plus jamais sans l&apos;indispensable !
             </p>
             <p className="mt-4 text-white/90">
               Des recommandations personnalisées en quelques clics pour transformer chaque voyage en 
