@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { PROMPT_VERSION } from '@/lib/tags';
 
 type ProductItem = { label: string; asin: string; marketplace: string; explain: string[] };
@@ -21,6 +22,7 @@ type AiResult =
   | { status: 'network-error' };
 
 export default function WizardPage() {
+  const router = useRouter();
   const [destinationCountry, setDestinationCountry] = useState('FR');
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
@@ -94,90 +96,28 @@ export default function WizardPage() {
 
   const onSubmit = useCallback(async () => {
     setResult({ status: 'loading' });
-    setAi({ status: 'loading' });
+    
+    // Sauvegarder les données de voyage dans sessionStorage pour la page résultats
+    const tripData = {
+      destination: destinationCountry,
+      startDate: dateStart,
+      endDate: dateEnd,
+      travelers,
+      adults: numAdults,
+      children: numChildren,
+      ages,
+      activities: [] // Pas encore implémenté
+    };
+    
     try {
-      // 1) Analyse IA (avec cache session)
-      const groupMin = Math.min(...ages);
-      const groupMax = Math.max(...ages);
-      const season = computeSeason(destinationCountry, dateStart || undefined);
-      const explainPayload = {
-        destinationCountry: destinationCountry.toUpperCase(),
-        marketplaceCountry: 'FR',
-        groupAge: { min: groupMin, max: groupMax },
-        dates: dateStart && dateEnd ? { start: new Date(dateStart).toISOString(), end: new Date(dateEnd).toISOString() } : undefined,
-        season,
-        tripType: 'general',
-        constraints: { maxTags: (['IS','NO','SE','FI'].includes(destinationCountry.toUpperCase()) && season === 'summer') ? 12 : 6, promptVersion: PROMPT_VERSION },
-      };
+      sessionStorage.setItem('tripData', JSON.stringify(tripData));
+    } catch {}
 
-      let tagsForRecommend: string[] | undefined = undefined;
-      try {
-        const cacheKey = `explain:${JSON.stringify(explainPayload)}`;
-        const cached = sessionStorage.getItem(cacheKey);
-        if (cached) {
-          const data = JSON.parse(cached) as { tags: TagItem[]; meta?: AiMeta };
-          tagsForRecommend = Array.isArray(data.tags) ? data.tags.map((t) => t.id) : undefined;
-          setAi({ status: 'success', tags: Array.isArray(data.tags) ? data.tags : [], meta: data.meta });
-        } else {
-          const resExplain = await fetch('/api/explain', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(explainPayload),
-          });
-          if (resExplain.ok) {
-            const data = (await resExplain.json()) as { tags: TagItem[]; meta?: AiMeta };
-            const tags = Array.isArray(data.tags) ? data.tags.slice(0, 100) : [];
-            sessionStorage.setItem(cacheKey, JSON.stringify({ tags, meta: data.meta }));
-            setAi({ status: 'success', tags, meta: data.meta });
-            tagsForRecommend = tags.map((t) => t.id);
-          } else {
-            setAi({ status: 'network-error' });
-          }
-        }
-      } catch {
-        setAi({ status: 'network-error' });
-      }
-
-      // 2) Recommandations
-      const start = dateStart ? new Date(dateStart).toISOString() : new Date().toISOString();
-      const end = dateEnd ? new Date(dateEnd).toISOString() : new Date().toISOString();
-      const recommendPayload = {
-        destinationCountry: destinationCountry.toUpperCase(),
-        marketplaceCountry: 'FR',
-        dates: { start, end },
-        travelers,
-        ages,
-        tags: tagsForRecommend,
-      };
-
-      const res = await fetch('/api/recommend', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(recommendPayload),
-      });
-
-      if (res.status === 400) {
-        const data = await res.json();
-        setResult({ status: 'validation-error', issues: data.issues });
-        return;
-      }
-
-      if (!res.ok) {
-        setResult({ status: 'network-error' });
-        return;
-      }
-
-      const items = (await res.json()) as Array<ProductItem>;
-      setShowAll(false);
-      if (items.length === 0) setResult({ status: 'empty' });
-      else {
-        const sorted = items.slice().sort((a, b) => extractPriority(a.explain) - extractPriority(b.explain));
-        setResult({ status: 'success', items: sorted });
-      }
-    } catch {
-      setResult({ status: 'network-error' });
-    }
-  }, [destinationCountry, travelers, ages, dateStart, dateEnd]);
+    // Simuler un petit délai pour l'effet de chargement
+    setTimeout(() => {
+      router.push('/results');
+    }, 1500);
+  }, [router, destinationCountry, dateStart, dateEnd, travelers, numAdults, numChildren, ages]);
 
   // Deriver travelers et agesInputs depuis compteurs Adultes/Enfants
   useEffect(() => {
@@ -584,200 +524,13 @@ export default function WizardPage() {
         </div>
       )}
 
-      {/* Layout avec résultats - après recherche - avec design hero */}
-      {result.status !== 'idle' && (
-        <div className="relative flex min-h-screen flex-col items-center justify-start px-6">
-          {/* Header */}
-          <div className="text-center mt-20 mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 font-airbnb">
-              Voyagez l&apos;esprit léger<br />avec Don&apos;t Forget
-            </h1>
-            <p className="text-lg md:text-xl opacity-90 font-airbnb">
-              Votre checklist sur mesure prête en 30s<br />sans stress ni oubli
-            </p>
-          </div>
-
-          {/* Hero Form Container */}
-          <div className="hero-form">
-            {/* Grille des champs */}
-            <div className="hero-fields">
-              {/* Destination */}
-              <div>
-                <div className="hero-label">Où partez-vous ?</div>
-                <select
-                  className="hero-select w-full"
-                  value={destinationCountry}
-                  onChange={(e) => setDestinationCountry(e.target.value)}
-                >
-                  <option value="FR">France</option>
-                  <option value="IS">Islande</option>
-                  <option value="TH">Thaïlande</option>
-                  <option value="MA">Maroc</option>
-                  <option value="BR">Brésil</option>
-                  <option value="US">États-Unis</option>
-                </select>
-              </div>
-
-              {/* Dates */}
-              <div>
-                <div className="hero-label">Quand partez-vous ?</div>
-                <div className="date-row">
-                  <button
-                    onClick={openDatePopup}
-                    className="hero-input flex flex-col justify-center text-left"
-                  >
-                    <div className="text-xs opacity-70 mb-1">Départ</div>
-                    <div className="text-sm">
-                      {dateStart ? formatDateLabel(dateStart) : '--/--/----'}
-                    </div>
-                  </button>
-                  <button
-                    onClick={openDatePopup}
-                    className="hero-input flex flex-col justify-center text-left"
-                  >
-                    <div className="text-xs opacity-70 mb-1">Retour</div>
-                    <div className="text-sm">
-                      {dateEnd ? formatDateLabel(dateEnd) : '--/--/----'}
-                    </div>
-                  </button>
-                </div>
-              </div>
-
-              {/* Voyageurs */}
-              <div>
-                <div className="hero-label">Avec qui ?</div>
-                <div className="hero-input flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-center">
-                      <div className="text-xs opacity-70 mb-1">Adultes</div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button"
-                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
-                          onClick={() => setNumAdults((n) => Math.max(0, n - 1))}
-                        >
-                          −
-                        </button>
-                        <span className="min-w-[1ch] text-center text-sm">{numAdults}</span>
-                        <button 
-                          type="button"
-                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
-                          onClick={() => setNumAdults((n) => Math.min(20, n + 1))}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs opacity-70 mb-1">Enfants</div>
-                      <div className="flex items-center gap-2">
-                        <button 
-                          type="button"
-                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
-                          onClick={() => setNumChildren((n) => Math.max(0, n - 1))}
-                        >
-                          −
-                        </button>
-                        <span className="min-w-[1ch] text-center text-sm">{numChildren}</span>
-                        <button 
-                          type="button"
-                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
-                          onClick={() => setNumChildren((n) => Math.min(20, n + 1))}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-xs opacity-70">
-                    Total: {travelers}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* CTA Button */}
-            <button
-              onClick={onSubmit}
-              className="hero-cta"
-            >
-              <span>Nouvelle recherche</span>
-              <svg className="hero-cta-icon" width="19" height="21" viewBox="0 0 19 21" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M5.17781 16.8556C3.73068 16.8556 2.50606 16.3543 1.50395 15.3517C0.50185 14.349 0.000531479 13.1244 4.21474e-07 11.6778C-0.000530636 10.2312 0.500787 9.00659 1.50395 8.00395C2.50712 7.00132 3.73174 6.5 5.17781 6.5C6.62388 6.5 7.84876 7.00132 8.85246 8.00395C9.85616 9.00659 10.3572 10.2312 10.3556 11.6778C10.3556 12.262 10.2627 12.8129 10.0768 13.3307C9.89094 13.8485 9.63869 14.3065 9.32006 14.7048L13.7809 19.1657C13.927 19.3118 14 19.4976 14 19.7233C14 19.949 13.927 20.1349 13.7809 20.2809C13.6349 20.427 13.449 20.5 13.2233 20.5C12.9976 20.5 12.8118 20.427 12.6657 20.2809L8.20484 15.8201C7.80654 16.1387 7.34851 16.3909 6.83073 16.5768C6.31294 16.7627 5.76197 16.8556 5.17781 16.8556ZM5.17781 15.2624C6.17354 15.2624 7.02005 14.9141 7.71733 14.2173C8.4146 13.5206 8.76298 12.6741 8.76245 11.6778C8.76192 10.6815 8.41354 9.83531 7.71733 9.13909C7.02111 8.44287 6.1746 8.09423 5.17781 8.09317C4.18102 8.09211 3.33478 8.44075 2.63909 9.13909C1.9434 9.83743 1.59477 10.6837 1.59317 11.6778C1.59158 12.6719 1.94022 13.5185 2.63909 14.2173C3.33796 14.9162 4.1842 15.2646 5.17781 15.2624Z" fill="currentColor"/>
-                <path d="M11.85 4.35L14.05 3.525L11.85 2.69917L11.025 0.5L10.1992 2.69917L8 3.525L10.1992 4.35L11.025 6.54999L11.85 4.35ZM16.25 8.75001L19 7.65L16.25 6.54999L15.15 3.8L14.05 6.54999L11.3 7.65L14.05 8.75001L15.15 11.5L16.25 8.75001Z" fill="currentColor"/>
-              </svg>
-            </button>
-          </div>
-
-          {/* Résultats - intégrés dans le design hero */}
-          <div className="w-full max-w-4xl mt-16 mb-20">
-            <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-8 font-airbnb">
-              Votre checklist personnalisée
-            </h2>
-            <div className="rounded-2xl glass-card p-6 md:p-8 shadow-xl border border-white/20">
-              {result.status === 'loading' && (
-                <div className="text-center py-8">
-                  <p className="text-white/90 text-lg">Génération de votre checklist en cours...</p>
-                </div>
-              )}
-              {result.status === 'empty' && (
-                <div className="text-center py-8">
-                  <p className="text-white/90 text-lg">Aucun produit trouvé pour ces critères</p>
-                </div>
-              )}
-              {result.status === 'validation-error' && (
-                <div className="text-center py-8">
-                  <p className="text-red-200">Erreur de validation des données</p>
-                </div>
-              )}
-              {result.status === 'network-error' && (
-                <div className="text-center py-8">
-                  <p className="text-red-200">Erreur de connexion — réessayez plus tard</p>
-                </div>
-              )}
-              {result.status === 'success' && (
-                <>
-                  <div className={`${showAll ? 'max-h-96 overflow-y-auto pr-2 modern-scroll' : ''} space-y-3`}>
-                    {(() => {
-                      const TOP_COUNT = 5;
-                      const displayed = showAll ? result.items : result.items.slice(0, TOP_COUNT);
-                      return displayed.map((p, idx) => {
-                        const dp = idx < TOP_COUNT ? 1 : 2;
-                        return (
-                          <div key={p.asin} className="flex items-center gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all">
-                            <div className="flex-1 min-w-0">
-                              <div className="text-white font-medium text-lg truncate">
-                                {p.label}
-                              </div>
-                            </div>
-                            <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${dp === 1 ? 'badge-prio-1' : dp === 2 ? 'badge-prio-2' : 'badge-prio-3'}`}>
-                              P{dp}
-                            </span>
-                            <a 
-                              className="rounded-full bg-white text-gray-900 px-4 py-2 hover:bg-gray-100 whitespace-nowrap font-medium transition-all shadow-md hover:shadow-lg" 
-                              href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`} 
-                              target="_blank"
-                            >
-                              Acheter
-                            </a>
-                          </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                  {!showAll && result.items.length > 5 && (
-                    <div className="mt-6 text-center">
-                      <button
-                        onClick={() => setShowAll(true)}
-                        className="inline-flex items-center justify-center rounded-full bg-white/20 text-white px-6 py-3 hover:bg-white/30 backdrop-blur-sm border border-white/30 font-medium transition-all"
-                      >
-                        Afficher tous les résultats ({result.items.length})
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+      {/* État de chargement pendant redirection */}
+      {result.status === 'loading' && (
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-6">
+          <div className="text-center">
+            <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-6"></div>
+            <p className="text-white/90 text-lg">Génération de votre checklist personnalisée...</p>
+            <p className="text-white/70 text-sm mt-2">Analyse de vos critères en cours</p>
           </div>
         </div>
       )}

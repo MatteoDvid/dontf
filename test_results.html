@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Results Page</title>
+</head>
+<body>
+    <script>
+        // Simuler des données dans sessionStorage
+        const tripData = {
+            destination: "IS", // Islande pour test
+            startDate: "2025-08-15T00:00:00.000Z",
+            endDate: "2025-08-25T00:00:00.000Z",
+            travelers: 2,
+            adults: 2,
+            children: 0,
+            ages: [30, 32],
+            activities: []
+        };
+        
+        sessionStorage.setItem('tripData', JSON.stringify(tripData));
+        
+        // Rediriger vers la page results
+        window.location.href = '/results';
+    </script>
+</body>
+</html>
