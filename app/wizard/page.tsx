@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { PROMPT_VERSION } from '@/lib/tags';
 
 type ProductItem = { label: string; asin: string; marketplace: string; explain: string[] };
@@ -347,8 +347,8 @@ export default function WizardPage() {
     function renderMonth(y: number, m: number) {
       const days = buildMonth(y, m);
       return (
-        <div className="p-3 rounded-xl border bg-gray-50">
-          <div className="text-center font-medium mb-2">{String(m).padStart(2, '0')}/{y}</div>
+        <div className="p-4 rounded-xl glass-field border border-white/20">
+          <div className="text-center font-medium mb-3 text-gray-900">{String(m).padStart(2, '0')}/{y}</div>
           <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 mb-1">
             <div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
           </div>
@@ -359,14 +359,14 @@ export default function WizardPage() {
                   key={cell.key}
                   onClick={() => onSelect(cell.key)}
                   disabled={cell.key < todayKey}
-                  className={`h-9 rounded-md text-sm transition ${
+                  className={`h-9 rounded-lg text-sm font-medium transition-all ${
                     cell.key < todayKey
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                      ? 'bg-gray-100/50 text-gray-400 cursor-not-allowed backdrop-blur-sm'
                       : isInRange(cell.key)
-                      ? 'bg-gray-900 text-white'
+                      ? 'bg-blue-500 text-white shadow-lg ring-2 ring-blue-300'
                       : selStart === cell.key || selEnd === cell.key
-                      ? 'bg-gray-800 text-white'
-                      : 'bg-white hover:bg-gray-100 border'
+                      ? 'bg-white text-gray-900 shadow-xl ring-2 ring-white/50 scale-105'
+                      : 'bg-white/30 hover:bg-white/50 text-gray-900 backdrop-blur-sm border border-white/20 hover:scale-105'
                   }`}
                 >
                   {Number(cell.key.split('-')[2])}
@@ -381,18 +381,20 @@ export default function WizardPage() {
     }
     return (
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={() => shiftMonth(-1)} className="rounded-lg border px-3 py-1.5 hover:bg-gray-50">Mois précédent</button>
-          <div className="text-sm text-gray-600">Sélection: {selStart ? formatDateLabel(selStart) : '—'} → {selEnd ? formatDateLabel(selEnd) : '—'}</div>
-          <button onClick={() => shiftMonth(1)} className="rounded-lg border px-3 py-1.5 hover:bg-gray-50">Mois suivant</button>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => shiftMonth(-1)} className="rounded-lg bg-white/20 border border-white/30 px-3 py-2 hover:bg-white/30 text-white backdrop-blur-sm transition-all">← Précédent</button>
+          <div className="text-sm text-white/90 bg-white/10 rounded-lg px-3 py-1 backdrop-blur-sm">
+            {selStart ? formatDateLabel(selStart) : '—'} → {selEnd ? formatDateLabel(selEnd) : '—'}
+          </div>
+          <button onClick={() => shiftMonth(1)} className="rounded-lg bg-white/20 border border-white/30 px-3 py-2 hover:bg-white/30 text-white backdrop-blur-sm transition-all">Suivant →</button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {renderMonth(view.year, view.month)}
           {renderMonth(view2.year, view2.month)}
         </div>
-        <div className="mt-4 flex items-center justify-between">
-          <button onClick={() => { setSelStart(''); setSelEnd(''); }} className="text-sm text-gray-600 hover:underline">Réinitialiser</button>
-          <button onClick={apply} className="rounded-xl bg-gray-900 text-white px-4 py-2">Appliquer</button>
+        <div className="mt-6 flex items-center justify-between">
+          <button onClick={() => { setSelStart(''); setSelEnd(''); }} className="text-sm text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-lg px-3 py-2 backdrop-blur-sm transition-all">Réinitialiser</button>
+          <button onClick={apply} className="rounded-xl bg-white text-gray-900 px-6 py-2 hover:bg-white/90 font-medium shadow-lg transition-all">Appliquer</button>
         </div>
       </div>
     );
@@ -442,15 +444,18 @@ export default function WizardPage() {
   }, [ages, destinationCountry, dateStart, dateEnd]);
 
   return (
-    <main
-      className="relative min-h-screen w-full text-white"
-      style={{
-        backgroundImage: "url('/images/hero.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      <div className="absolute inset-0 bg-black/0" />
+    <main className="relative w-full text-white min-h-screen">
+      {/* Background fixe qui ne bouge jamais */}
+      <div 
+        className="fixed inset-0 w-full h-screen -z-10"
+        style={{
+          backgroundImage: "url('/images/hero.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      />
+      <div className="fixed inset-0 bg-black/0 -z-10" />
 
       {/* Layout initial - avant recherche */}
       {result.status === 'idle' && (
@@ -579,134 +584,199 @@ export default function WizardPage() {
         </div>
       )}
 
-      {/* Layout avec résultats - après recherche */}
+      {/* Layout avec résultats - après recherche - avec design hero */}
       {result.status !== 'idle' && (
-        <div className="relative mx-auto max-w-7xl px-6 py-10 md:py-16 lg:py-20">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-start">
-            {/* Carte verre dépoli */}
-            <div className="max-w-md">
-              <div className="rounded-2xl glass-card shadow-2xl p-5 md:p-6">
-                <div className="space-y-4">
-                  <div>
-                    <div className="text-sm font-semibold">Où partez-vous</div>
-                    <select
-                      className="mt-2 w-full rounded-xl bg-white/80 text-gray-900 px-4 py-3 outline-none focus:ring-2 focus:ring-white/60"
-                      value={destinationCountry}
-                      onChange={(e) => setDestinationCountry(e.target.value)}
-                    >
-                      <option value="FR">France</option>
-                      <option value="IS">Islande</option>
-                      <option value="TH">Thaïlande</option>
-                      <option value="MA">Maroc</option>
-                      <option value="BR">Brésil</option>
-                      <option value="US">États-Unis</option>
-                    </select>
-                  </div>
+        <div className="relative flex min-h-screen flex-col items-center justify-start px-6">
+          {/* Header */}
+          <div className="text-center mt-20 mb-8">
+            <h1 className="text-4xl md:text-6xl font-bold mb-4 font-airbnb">
+              Voyagez l&apos;esprit léger<br />avec Don&apos;t Forget
+            </h1>
+            <p className="text-lg md:text-xl opacity-90 font-airbnb">
+              Votre checklist sur mesure prête en 30s<br />sans stress ni oubli
+            </p>
+          </div>
 
-                  <div>
-                    <div className="text-sm font-semibold">Quand partez-vous</div>
-                    <button
-                      onClick={openDatePopup}
-                      className="mt-2 w-full rounded-lg glass-input text-gray-900 px-3 py-2 text-left text-sm hover:brightness-110"
-                    >
-                      {dateStart && dateEnd
-                        ? `Du ${dateStart || ''} au ${dateEnd || ''}`
-                        : 'Sélectionner les dates (aller/retour)'}
-                    </button>
-                  </div>
+          {/* Hero Form Container */}
+          <div className="hero-form">
+            {/* Grille des champs */}
+            <div className="hero-fields">
+              {/* Destination */}
+              <div>
+                <div className="hero-label">Où partez-vous ?</div>
+                <select
+                  className="hero-select w-full"
+                  value={destinationCountry}
+                  onChange={(e) => setDestinationCountry(e.target.value)}
+                >
+                  <option value="FR">France</option>
+                  <option value="IS">Islande</option>
+                  <option value="TH">Thaïlande</option>
+                  <option value="MA">Maroc</option>
+                  <option value="BR">Brésil</option>
+                  <option value="US">États-Unis</option>
+                </select>
+              </div>
 
-                  <div>
-                    <div className="text-sm font-semibold flex items-center gap-2">
-                      Avec qui ?
-                      <span className="text-xs rounded-full bg-white/20 px-2 py-0.5" title="Adulte: ≥18 ans, Enfant: <18 ans.">i</span>
+              {/* Dates */}
+              <div>
+                <div className="hero-label">Quand partez-vous ?</div>
+                <div className="date-row">
+                  <button
+                    onClick={openDatePopup}
+                    className="hero-input flex flex-col justify-center text-left"
+                  >
+                    <div className="text-xs opacity-70 mb-1">Départ</div>
+                    <div className="text-sm">
+                      {dateStart ? formatDateLabel(dateStart) : '--/--/----'}
                     </div>
-                    <div className="mt-2 grid grid-cols-2 gap-3">
-                      <div className="rounded-lg glass-field px-3 py-2 text-gray-900 flex flex-col items-center text-center">
-                        <div className="text-xs font-medium">Adultes</div>
-                        <div className="mt-2 flex items-center justify-center gap-2">
-                          <button className="h-8 w-8 rounded-md bg-white border text-sm" onClick={() => setNumAdults((n) => Math.max(0, n - 1))}>−</button>
-                          <span className="min-w-[2ch] text-center text-sm">{numAdults}</span>
-                          <button className="h-8 w-8 rounded-md bg-white border text-sm" onClick={() => setNumAdults((n) => Math.min(20, n + 1))}>+</button>
-                        </div>
-                      </div>
-                      <div className="rounded-lg glass-field px-3 py-2 text-gray-900 flex flex-col items-center text-center">
-                        <div className="text-xs font-medium">Enfants</div>
-                        <div className="mt-2 flex items-center justify-center gap-2">
-                          <button className="h-8 w-8 rounded-md bg-white border text-sm" onClick={() => setNumChildren((n) => Math.max(0, n - 1))}>−</button>
-                          <span className="min-w-[2ch] text-center text-sm">{numChildren}</span>
-                          <button className="h-8 w-8 rounded-md bg-white border text-sm" onClick={() => setNumChildren((n) => Math.min(20, n + 1))}>+</button>
-                        </div>
+                  </button>
+                  <button
+                    onClick={openDatePopup}
+                    className="hero-input flex flex-col justify-center text-left"
+                  >
+                    <div className="text-xs opacity-70 mb-1">Retour</div>
+                    <div className="text-sm">
+                      {dateEnd ? formatDateLabel(dateEnd) : '--/--/----'}
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Voyageurs */}
+              <div>
+                <div className="hero-label">Avec qui ?</div>
+                <div className="hero-input flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-xs opacity-70 mb-1">Adultes</div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          type="button"
+                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
+                          onClick={() => setNumAdults((n) => Math.max(0, n - 1))}
+                        >
+                          −
+                        </button>
+                        <span className="min-w-[1ch] text-center text-sm">{numAdults}</span>
+                        <button 
+                          type="button"
+                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
+                          onClick={() => setNumAdults((n) => Math.min(20, n + 1))}
+                        >
+                          +
+                        </button>
                       </div>
                     </div>
-                    <div className="mt-1 text-xs text-white/80">Total voyageurs: {travelers}</div>
+                    <div className="text-center">
+                      <div className="text-xs opacity-70 mb-1">Enfants</div>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          type="button"
+                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
+                          onClick={() => setNumChildren((n) => Math.max(0, n - 1))}
+                        >
+                          −
+                        </button>
+                        <span className="min-w-[1ch] text-center text-sm">{numChildren}</span>
+                        <button 
+                          type="button"
+                          className="w-6 h-6 rounded bg-white/20 text-sm hover:bg-white/30 flex items-center justify-center" 
+                          onClick={() => setNumChildren((n) => Math.min(20, n + 1))}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   </div>
-
-                  <div className="pt-1">
-                    <button
-                      onClick={onSubmit}
-                      className="group inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 font-medium text-gray-900 shadow hover:bg-gray-100 transition"
-                    >
-                      <span>Voir les recommandations</span>
-                      <span className="transition-transform group-hover:translate-x-0.5">➡️</span>
-                    </button>
+                  <div className="text-xs opacity-70">
+                    Total: {travelers}
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Résultats */}
-            <div className="max-w-2xl">
-              <h2 className="text-2xl md:text-3xl font-semibold">Votre checklist personnalisée</h2>
-              <div className="mt-4 rounded-2xl glass-card p-5 md:p-6 shadow-xl border border-white/20">
-                {result.status === 'loading' && (
-                  <p className="text-white/90">Chargement…</p>
-                )}
-                {result.status === 'empty' && (
-                  <p className="text-white/90">0 résultat</p>
-                )}
-                {result.status === 'validation-error' && (
-                  <pre className="text-red-200 text-sm overflow-auto">
-                    {JSON.stringify(result.issues, null, 2)}
-                  </pre>
-                )}
-                {result.status === 'network-error' && (
-                  <p className="text-red-200">Erreur réseau — réessaie plus tard.</p>
-                )}
-                {result.status === 'success' && (
-                  <>
-                    <ul className={`${showAll ? 'max-h-96 overflow-y-auto pr-2 modern-scroll' : ''} divide-y divide-gray-200/60` }>
-                      {(() => {
-                        const TOP_COUNT = 5;
-                        const displayed = showAll ? result.items : result.items.slice(0, TOP_COUNT);
-                        return displayed.map((p, idx) => {
-                          const dp = idx < TOP_COUNT ? 1 : 2;
-                          return (
-                            <li key={p.asin} className="py-3 flex items-center gap-4">
-                              <div className="flex-1 min-w-0 truncate">
-                                <div className="rounded-xl bg-white/15 border border-white/30 backdrop-blur-md px-4 py-2 text-white font-medium truncate shadow-sm">
-                                  {p.label}
-                                </div>
+            {/* CTA Button */}
+            <button
+              onClick={onSubmit}
+              className="hero-cta"
+            >
+              <span>Nouvelle recherche</span>
+              <svg className="hero-cta-icon" width="19" height="21" viewBox="0 0 19 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M5.17781 16.8556C3.73068 16.8556 2.50606 16.3543 1.50395 15.3517C0.50185 14.349 0.000531479 13.1244 4.21474e-07 11.6778C-0.000530636 10.2312 0.500787 9.00659 1.50395 8.00395C2.50712 7.00132 3.73174 6.5 5.17781 6.5C6.62388 6.5 7.84876 7.00132 8.85246 8.00395C9.85616 9.00659 10.3572 10.2312 10.3556 11.6778C10.3556 12.262 10.2627 12.8129 10.0768 13.3307C9.89094 13.8485 9.63869 14.3065 9.32006 14.7048L13.7809 19.1657C13.927 19.3118 14 19.4976 14 19.7233C14 19.949 13.927 20.1349 13.7809 20.2809C13.6349 20.427 13.449 20.5 13.2233 20.5C12.9976 20.5 12.8118 20.427 12.6657 20.2809L8.20484 15.8201C7.80654 16.1387 7.34851 16.3909 6.83073 16.5768C6.31294 16.7627 5.76197 16.8556 5.17781 16.8556ZM5.17781 15.2624C6.17354 15.2624 7.02005 14.9141 7.71733 14.2173C8.4146 13.5206 8.76298 12.6741 8.76245 11.6778C8.76192 10.6815 8.41354 9.83531 7.71733 9.13909C7.02111 8.44287 6.1746 8.09423 5.17781 8.09317C4.18102 8.09211 3.33478 8.44075 2.63909 9.13909C1.9434 9.83743 1.59477 10.6837 1.59317 11.6778C1.59158 12.6719 1.94022 13.5185 2.63909 14.2173C3.33796 14.9162 4.1842 15.2646 5.17781 15.2624Z" fill="currentColor"/>
+                <path d="M11.85 4.35L14.05 3.525L11.85 2.69917L11.025 0.5L10.1992 2.69917L8 3.525L10.1992 4.35L11.025 6.54999L11.85 4.35ZM16.25 8.75001L19 7.65L16.25 6.54999L15.15 3.8L14.05 6.54999L11.3 7.65L14.05 8.75001L15.15 11.5L16.25 8.75001Z" fill="currentColor"/>
+              </svg>
+            </button>
+          </div>
+
+          {/* Résultats - intégrés dans le design hero */}
+          <div className="w-full max-w-4xl mt-16 mb-20">
+            <h2 className="text-2xl md:text-3xl font-bold text-center text-white mb-8 font-airbnb">
+              Votre checklist personnalisée
+            </h2>
+            <div className="rounded-2xl glass-card p-6 md:p-8 shadow-xl border border-white/20">
+              {result.status === 'loading' && (
+                <div className="text-center py-8">
+                  <p className="text-white/90 text-lg">Génération de votre checklist en cours...</p>
+                </div>
+              )}
+              {result.status === 'empty' && (
+                <div className="text-center py-8">
+                  <p className="text-white/90 text-lg">Aucun produit trouvé pour ces critères</p>
+                </div>
+              )}
+              {result.status === 'validation-error' && (
+                <div className="text-center py-8">
+                  <p className="text-red-200">Erreur de validation des données</p>
+                </div>
+              )}
+              {result.status === 'network-error' && (
+                <div className="text-center py-8">
+                  <p className="text-red-200">Erreur de connexion — réessayez plus tard</p>
+                </div>
+              )}
+              {result.status === 'success' && (
+                <>
+                  <div className={`${showAll ? 'max-h-96 overflow-y-auto pr-2 modern-scroll' : ''} space-y-3`}>
+                    {(() => {
+                      const TOP_COUNT = 5;
+                      const displayed = showAll ? result.items : result.items.slice(0, TOP_COUNT);
+                      return displayed.map((p, idx) => {
+                        const dp = idx < TOP_COUNT ? 1 : 2;
+                        return (
+                          <div key={p.asin} className="flex items-center gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 hover:bg-white/15 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <div className="text-white font-medium text-lg truncate">
+                                {p.label}
                               </div>
-                              <span className={`inline-flex items-center justify-center rounded-full px-2 py-0.5 text-xs font-semibold ${dp === 1 ? 'badge-prio-1' : dp === 2 ? 'badge-prio-2' : 'badge-prio-3'}`}>P{dp}</span>
-                              <a className="rounded-full bg-white/90 text-gray-900 px-3 py-1.5 hover:bg-white whitespace-nowrap text-sm shadow" href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`} target="_blank">Acheter</a>
-                            </li>
-                          );
-                        });
-                      })()}
-                    </ul>
-                    {!showAll && result.items.length > 5 && (
-                      <div className="mt-4 text-center">
-                        <button
-                          onClick={() => setShowAll(true)}
-                          className="inline-flex items-center justify-center rounded-md bg-gray-900 text-white px-4 py-2 hover:bg-black shadow"
-                        >
-                          Afficher tous les résultats ({result.items.length})
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
+                            </div>
+                            <span className={`inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${dp === 1 ? 'badge-prio-1' : dp === 2 ? 'badge-prio-2' : 'badge-prio-3'}`}>
+                              P{dp}
+                            </span>
+                            <a 
+                              className="rounded-full bg-white text-gray-900 px-4 py-2 hover:bg-gray-100 whitespace-nowrap font-medium transition-all shadow-md hover:shadow-lg" 
+                              href={`/api/affiliate/${p.asin}?marketplace=${p.marketplace}`} 
+                              target="_blank"
+                            >
+                              Acheter
+                            </a>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  {!showAll && result.items.length > 5 && (
+                    <div className="mt-6 text-center">
+                      <button
+                        onClick={() => setShowAll(true)}
+                        className="inline-flex items-center justify-center rounded-full bg-white/20 text-white px-6 py-3 hover:bg-white/30 backdrop-blur-sm border border-white/30 font-medium transition-all"
+                      >
+                        Afficher tous les résultats ({result.items.length})
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -715,8 +785,8 @@ export default function WizardPage() {
       {isDatePopupOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/60" onClick={closeDatePopup} />
-          <div className="relative z-10 w-full max-w-md rounded-2xl bg-white text-gray-900 shadow-2xl p-5">
-            <div className="text-lg font-semibold mb-3">Sélectionner vos dates</div>
+          <div className="relative z-10 w-full max-w-md rounded-2xl glass-card text-white shadow-2xl p-6 border border-white/30">
+            <div className="text-lg font-semibold mb-4 text-center">Sélectionner vos dates</div>
             <DateRangePicker
               start={tmpStart}
               end={tmpEnd}
@@ -725,9 +795,9 @@ export default function WizardPage() {
                 setTmpEnd(e);
               }}
             />
-            <div className="mt-4 flex justify-end gap-2">
-              <button onClick={closeDatePopup} className="rounded-xl border px-4 py-2">Annuler</button>
-              <button onClick={confirmDatePopup} className="rounded-xl bg-gray-900 text-white px-4 py-2">Valider</button>
+            <div className="mt-6 flex justify-end gap-3">
+              <button onClick={closeDatePopup} className="rounded-xl bg-white/20 border border-white/30 text-white px-5 py-2 hover:bg-white/30 backdrop-blur-sm transition-all">Annuler</button>
+              <button onClick={confirmDatePopup} className="rounded-xl bg-white text-gray-900 px-5 py-2 hover:bg-white/90 font-medium shadow-lg transition-all">Valider</button>
             </div>
           </div>
         </div>
