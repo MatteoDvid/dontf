@@ -125,7 +125,7 @@ export default function ResultsPage() {
           marketplace: product.marketplace || 'FR',
           price: undefined, // Sera géré par l'affichage (pas de prix dans l'API recommend)
           originalPrice: undefined,
-          description: `Recommandé pour votre voyage à ${tripSummary.destination}. ${product.explain?.filter(e => e.startsWith('destination=') || e.startsWith('marketplace=')).join(' | ') || 'Sélectionné par IA selon votre destination'}`,
+          description: `Recommandé pour votre voyage. ${product.explain?.filter(e => e.startsWith('destination=') || e.startsWith('marketplace=')).join(' | ') || 'Sélectionné par IA selon votre destination'}`,
           availability: "Voir sur Amazon",
           inStock: true // Disponible via Amazon
         }));
@@ -312,14 +312,14 @@ export default function ResultsPage() {
                               className="text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
                               style={{backgroundColor: '#099142'}}
                             >
-                              J'ai déjà prévu ✓
+                              J&apos;ai déjà prévu ✓
                             </button>
                           ) : (
                             <button 
                               className="text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:opacity-90"
                               style={{backgroundColor: '#099142'}}
                             >
-                              Je n'ai pas prévu ✕
+                              Je n&apos;ai pas prévu ✕
                             </button>
                           )}
                         </div>
@@ -331,7 +331,7 @@ export default function ResultsPage() {
                   {product.description?.includes('mustHave=true') && (
                     <div className="mt-4 p-3 rounded-lg" style={{backgroundColor: '#E8F5E8', border: '1px solid #099142'}}>
                       <div className="font-medium text-sm" style={{color: '#099142'}}>
-                        ⭐ Produit essentiel identifié par l'IA
+                        ⭐ Produit essentiel identifié par l&apos;IA
                       </div>
                     </div>
                   )}
