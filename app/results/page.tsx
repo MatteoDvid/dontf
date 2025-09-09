@@ -153,7 +153,7 @@ export default function ResultsPage() {
     };
 
     loadRecommendations();
-  }, [isLoading]);
+  }, [isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Convertir code pays en nom
   function getDestinationName(countryCode: string): string {
